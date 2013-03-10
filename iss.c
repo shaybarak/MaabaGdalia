@@ -203,6 +203,7 @@ int main(int argc, char** argv) {
 		inst = fetch(mem[pc]);
 		printFetch(inst, instCount, pc, mem, regs, outFile);
 		decode(inst, regs);
+		pc++;
 		execute(inst, &pc, mem, regs, outFile);
 		instCount++;
 	} while (inst.opcode != HLT);
