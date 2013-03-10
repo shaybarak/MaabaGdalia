@@ -79,43 +79,43 @@ int execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 		switch(inst.opcode) {	
 		case ADD:
 			regs[inst.dst] = inst.val0 + inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d ADD %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = %d ADD %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case SUB:
 			regs[inst.dst] = inst.val0 - inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d SUB %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = %d SUB %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case LSF:
 			regs[inst.dst] = inst.val0 << inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d LSF %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = %d LSF %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case RSF:
 			regs[inst.dst] = inst.val0 >> inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d RSF %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = %d RSF %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case AND:
 			regs[inst.dst] = inst.val0 & inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d AND %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = %d AND %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case OR:
 			regs[inst.dst] = inst.val0 | inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d OR %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = %d OR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case XOR:
 			regs[inst.dst] = inst.val0 ^ inst.val1;
-			fprintf(outFile,">>>> EXEC: R[%d] = %d XOR %d <<<<", inst.dst, inst.val0, inst.val1);
+			fprintf(outFile,">>>> EXEC: R[%d] = %d XOR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case LHI:
 			regs[inst.dst] = inst.val0 | (regs[inst.dst] & 0xffff);
-			fprintf(outFile,">>>> EXEC: R[%d][31:16] = %d <<<<", inst.dst, inst.val0);
+			fprintf(outFile,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", inst.dst, inst.val0);
 			break;
 		case LD:
 			regs[inst.dst] = mem[inst.val1];
-			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<", inst.dst, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1);
 			break;
 		case ST:
 			mem[inst.val1] = inst.val0;
-			fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<", inst.val1, inst.val0);
+			fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", inst.val1, inst.val0);
 			break;
 		case JLT:
 			*pc = (inst.val0 < inst.val1) ? inst.immediate : *pc;
