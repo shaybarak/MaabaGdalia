@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -192,7 +191,7 @@ int main(int argc, char** argv) {
 		fclose(input);
 		return 1;	
 	}
-	
+
 	fclose(input);
 	fprintf(outFile, "program %s loaded, %d lines\n\n", inFilename, memIndex);
 
