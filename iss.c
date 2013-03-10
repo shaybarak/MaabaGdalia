@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #define REG_COUNT 8
 #define CMD_SIZE 32
@@ -138,9 +139,12 @@ int execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 			fprintf(outFile, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", inst.src0, inst.val0);
 			break;
 		case HLT:
+			// Intentionally print one line break
+			fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc);
 		default:
+			assert(false);
 			break;
-		}	      
+		}
 }
 
 void printFetch(Instruction inst, int instCount, int pc, int* mem, int* regs, FILE* outFile) {
