@@ -56,7 +56,9 @@ char* toOpcodeName(Opcode opcode) {
    case JNE: 	return "JNE";
    case JIN: 	return "JIN";
    case HLT: 	return "HLT";
+   default:		assert(0);
    }
+   return NULL;
 }
 
 Instruction fetch(int inst) {
@@ -75,8 +77,7 @@ void decode(Instruction inst, int* regs) {
 	inst.val1 = (inst.src1 == 1) ? inst.immediate : regs[inst.src1];
 }
 
-int execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
-
+void execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 		switch(inst.opcode) {	
 		case ADD:
 			regs[inst.dst] = inst.val0 + inst.val1;
@@ -148,7 +149,6 @@ int execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 }
 
 void printFetch(Instruction inst, int instCount, int pc, int* mem, int* regs, FILE* outFile) {
-	
 	fprintf(outFile, "--- instruction %d (%04x) @ PC %d (%04x) -----------------------------------------------------------\n", 
 		instCount, instCount, pc, pc);
 	
@@ -158,9 +158,7 @@ void printFetch(Instruction inst, int instCount, int pc, int* mem, int* regs, FI
 	fprintf(outFile, "r[0] = 00000000 r[1] = %08x r[2] = %08x r[3] = %08x\n", inst.immediate, regs[2], regs[3]);
 	
 	fprintf(outFile, "r[4] = %08x r[5] = %08x r[6] = %08x r[7] = %08x\n\n", regs[4], regs[5], regs[6], regs[7]);
-
 }
-
 
 int main(int argc, char** argv) {
 	int regs[REG_COUNT] = {0};
@@ -169,36 +167,37 @@ int main(int argc, char** argv) {
 	char* outFilename = "trace.txt";
 	int mem[MAX_MEMORY_SIZE] = {0};
 	int memIndex = 0;
+	FILE* inFile;
+	FILE* outFile;
+	int pc = 0;
+	int instCount = 0;
+	Instruction inst = {0};
 
-	FILE* input = fopen(inFilename, "r");
-	if (input == NULL) {
+	inFile = fopen(inFilename, "r");
+	if (inFile == NULL) {
 		printf("Error opening file %s, exit\n", inFilename);
 		return 1;
 	}
 
-	FILE* outFile = fopen(outFilename, "w");
+	outFile = fopen(outFilename, "w");
 
-	while (fgets(lineBuffer, CMD_SIZE, input) != NULL) {
+	while (fgets(lineBuffer, CMD_SIZE, inFile) != NULL) {
 		if (sscanf(lineBuffer, "%08x", &mem[memIndex]) != 1) {
 			printf("Error reading from file %s, exit\n", inFilename);
-			fclose(input);
+			fclose(inFile);
 			return 1;			
 		}
 		memIndex++;
 	} 
 
-	if (ferror(input)) {
+	if (ferror(inFile)) {
 		printf("Error reading from file %s, exit\n", inFilename);
-		fclose(input);
+		fclose(inFile);
 		return 1;	
 	}
 
-	fclose(input);
+	fclose(inFile);
 	fprintf(outFile, "program %s loaded, %d lines\n\n", inFilename, memIndex);
-
-	int pc = 0;
-	int instCount = 0;
-	Instruction inst;
 
 	do {
 		inst = fetch(mem[pc]);
@@ -210,6 +209,7 @@ int main(int argc, char** argv) {
 	} while (inst.opcode != HLT);
 
 	fprintf(outFile, "sim finished at pc %d, %d instructions\n\n", pc, instCount);
+	fclose(outFile);
 
 	return 0;
 }
