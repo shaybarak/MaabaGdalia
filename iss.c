@@ -119,26 +119,27 @@ int execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 			break;
 		case JLT:
 			*pc = (inst.val0 < inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JLT %d, %d, %d <<<<", inst.val0, inst.val0, inst.immediate);
+			fprintf(outFile, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
 			break;
 		case JLE:
 			*pc = (inst.val0 <= inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JLE %d, %d, %d <<<<", inst.val0, inst.val0, inst.immediate);
+			fprintf(outFile, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
 			break;
 		case JEQ:
 			*pc = (inst.val0 == inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JEQ %d, %d, %d <<<<", inst.val0, inst.val0, inst.immediate);
+			fprintf(outFile, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
 			break;
 		case JNE:
 			*pc = (inst.val0 != inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<", inst.val0, inst.val0, inst.immediate);
+			fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
 			break;
 		case JIN:
 			*pc = regs[inst.val0];
-			fprintf(outFile, ">>>> EXEC: JIN reg <<<<", inst.val0, inst.val0, inst.immediate);
+			fprintf(outFile, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", inst.src0, inst.val0);
+			break;
 		case HLT:
 		default:
-			break;;
+			break;
 		}	      
 }
 
