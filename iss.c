@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 	int regs[REG_COUNT] = {0};
 	char lineBuffer[CMD_SIZE];
 	char* inFilename = argv[1];
-	char* outFilename = "tarce.txt";
+	char* outFilename = "trace.txt";
 	int mem[MAX_MEMORY_SIZE] = {0};
 	int memIndex = 0;
 
