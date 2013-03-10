@@ -185,7 +185,6 @@ int main(int argc, char** argv) {
 			return 1;			
 		}
 		memIndex++;
-
 	} 
 
 	if (ferror(input)) {
@@ -193,6 +192,7 @@ int main(int argc, char** argv) {
 		fclose(input);
 		return 1;	
 	}
+	
 	fclose(input);
 	fprintf(outFile, "program %s loaded, %d lines\n\n", inFilename, memIndex);
 
