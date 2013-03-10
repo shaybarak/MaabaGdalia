@@ -197,6 +197,8 @@ int main(int argc, char** argv) {
 		instCount++;
 	} while (inst.opcode != HLT);
 
+	fprintf(outFile, "sim finished at pc %d, %d instructions\n\n", pc, instCount);
+
 	return 0;
 
 }
