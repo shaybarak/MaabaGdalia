@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{9FC2032E-B30C-4285-84D3-95C1BE4837D4}</ProjectGuid>
+    <ProjectGuid>{D1ADC448-6304-499A-A775-28C5A65E7215}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Iss</RootNamespace>
+    <RootNamespace>assembler</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -74,7 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\iss.c" />
+    <ClCompile Include="..\asm.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

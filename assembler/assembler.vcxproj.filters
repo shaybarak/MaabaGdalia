@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\iss.c">
+    <ClCompile Include="..\asm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
