@@ -62,15 +62,15 @@ char* toOpcodeName(Opcode opcode) {
 }
 
 Instruction fetch(int inst) {
-	Instruction out;
-	out.opcode = (Opcode)((inst >> 25) & 0x1F);
-	out.dst = (inst >> 22) & 0x7;
-	out.src0 = (inst >> 19) & 0x7; 
-	out.src1 = (inst >> 16) & 0x7;
-	out.immediate = (inst) & 0xffff;
+	// Reverse endianity
+	inst =
+		((inst & 0xff000000) >> 24) |
+		((inst & 0x00ff0000) >> 8)  |
+		((inst & 0x0000ff00) << 8)  |
+		((inst & 0x000000ff) << 24);
+	Instruction out = {inst};
 	return out;
 }
-
 
 void decode(Instruction inst, int* regs) {
 	inst.val0 = (inst.src0 == 1 || inst.opcode == LHI) ? inst.immediate : regs[inst.src0];
