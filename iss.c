@@ -39,22 +39,22 @@ typedef struct {
 
 char* toOpcodeName(Opcode opcode) {
    switch (opcode) {
-   case ADD: return "ADD";
-   case SUB: return "SUB";
-   case LSF: return "LSF";
-   case RSF: return "RSF";
-   case AND: return "AND";
-   case OR: return "OR";
-   case XOR: return "XOR";
-   case LHI: return "LHI";
-   case LD: return "LD";
-   case ST: return "ST";
-   case JLT: return "JLT";
-   case JLE: return "JLE";
-   case JEQ: return "JEQ";
-   case JNE: return "JNE";
-   case JIN: return "JIN";
-   case HLT: return "HLT";
+   case ADD:	return "ADD";
+   case SUB:	return "SUB";
+   case LSF:	return "LSF";
+   case RSF:	return "RSF";
+   case AND:	return "AND";
+   case OR:		return "OR";
+   case XOR:	return "XOR";
+   case LHI:	return "LHI";
+   case LD:		return "LD";
+   case ST: 	return "ST";
+   case JLT:	return "JLT";
+   case JLE: 	return "JLE";
+   case JEQ: 	return "JEQ";
+   case JNE: 	return "JNE";
+   case JIN: 	return "JIN";
+   case HLT: 	return "HLT";
    }
 }
 
@@ -65,13 +65,6 @@ Instruction fetch(int inst) {
 	out.src0 = (inst >> 19) & 0x7; 
 	out.src1 = (inst >> 16) & 0x7;
 	out.immediate = (inst) & 0xffff;
-
-	//TODO remove
-	/*if(out.opcode == ADD || out.opcode == SUB) {
-		int sign = (out.immediate >> 16) & 0x1;
-		int ext = (sign == 0) ? 0 : 0xffff0000;
-		out.immediate = ext | out.immediate;
-	}*/
 	return out;
 }
 
@@ -168,7 +161,7 @@ int main(int argc, char** argv) {
 
 	FILE* input = fopen(inFilename, "r");
 	if (input == NULL) {
-		printf("Error openning file %s, exit\n", inFilename);
+		printf("Error opening file %s, exit\n", inFilename);
 		return 1;
 	}
 
