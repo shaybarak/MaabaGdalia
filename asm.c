@@ -53,13 +53,13 @@ static void assemble_program(char *program_name)
 	 */
 	asm_cmd(ADD, 2, 1, 0, 15); // 0: R2 = 15
 	asm_cmd(ADD, 5, 1, 0, 20); // 1: R5 = 20
-	asm_cmd(ADD, 3, 1, 0, 0); // 2: 
-	asm_cmd(LD,  4, 0, 2, 0); // 3:
-	asm_cmd(ADD, 3, 3, 4, 0); // 4:
-	asm_cmd(ADD, 2, 2, 1, 1); // 5:
-	asm_cmd(JLT, 0, 2, 5, 3); // 6:
-	asm_cmd(ST,  0, 3, 1, 15); // 7:
-	asm_cmd(HLT, 0, 0, 0, 0); // 8:
+	asm_cmd(ADD, 3, 1, 0, 0);  // 2: R3 = 0
+	asm_cmd(LD,  4, 0, 2, 0);  // 3: R4 = MEM[R2]
+	asm_cmd(ADD, 3, 3, 4, 0);  // 4: R3 += R4
+	asm_cmd(ADD, 2, 2, 1, 1);  // 5: R2 += 1
+	asm_cmd(JLT, 0, 2, 5, 3);  // 6: if R2 < R5 goto 3
+	asm_cmd(ST,  0, 3, 1, 15); // 7: MEM[R3] = 15
+	asm_cmd(HLT, 0, 0, 0, 0);  // 8: Halt
 
 	for (i = 0; i < 5; i++)
 		mem[15+i] = i;
