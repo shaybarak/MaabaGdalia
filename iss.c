@@ -135,7 +135,7 @@ void execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 			fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
 			break;
 		case JIN:
-			*pc = val0;
+			*pc = inst.val0;
 			fprintf(outFile, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", inst.src0, inst.val0);
 			break;
 		case HLT:
