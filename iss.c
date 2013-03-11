@@ -55,8 +55,8 @@ char* toOpcodeName(Opcode opcode) {
    case JIN: 	return "JIN";
    case HLT: 	return "HLT";
    default:
-   	printf("Illegal opcode %d!\n", opcode);
-   	exit(1);
+	printf("Illegal opcode %d!\n", opcode);
+	exit(1);
    }
    return NULL;
 }
