@@ -76,8 +76,8 @@ static void assemble_program(char *program_name)
 	// loop_negative:
 	asm_cmd(JEQ, 0, 3, 0, 14);		// 9:  Exit condition (multiplier == 0)
 	asm_cmd(SUB, 4, 4, 2, 0);		// 10: sum -= multiplicand
-	asm_cmd(RSF, 2, 2, 1, 1);		// 11: multiplicand << 1
-	asm_cmd(LSF, 3, 3, 1, 1);		// 12: multiplier >> 1
+	asm_cmd(LSF, 2, 2, 1, 1);		// 11: multiplicand << 1
+	asm_cmd(RSF, 3, 3, 1, 1);		// 12: multiplier >> 1
 	asm_cmd(JEQ, 0, 0, 0, 8);		// 13: goto loop_negative
 	// done:
 	asm_cmd(ST,  0, 4, 1, 1002);	// 14: output result
