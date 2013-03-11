@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-
 #define REG_COUNT 8
 #define CMD_SIZE 32
 #define MAX_CMD_COUNT 65536
@@ -29,7 +28,7 @@ typedef enum Opcode {
 
 typedef struct {
 	int unused			: 2;
-	Opcode opcode		: 5;
+	Opcode opcode;
 	unsigned int dst	: 3;
 	unsigned int src0	: 3;
 	unsigned int src1	: 3;
@@ -63,7 +62,7 @@ char* toOpcodeName(Opcode opcode) {
 
 Instruction fetch(unsigned int inst) {
 	Instruction out;
-	out.opcode = (Opcode)((inst >> 25) & 0x1F);
+	out.opcode = (Opcode)(unsigned int)((inst >> 25) & 0x1F);
 	out.dst = (inst >> 22) & 0x7;
 	out.src0 = (inst >> 19) & 0x7; 
 	out.src1 = (inst >> 16) & 0x7;
@@ -76,7 +75,7 @@ void decode(Instruction* inst, int* regs) {
 	inst->val1 = (inst->src1 == 1) ? inst->immediate : regs[inst->src1];
 }
 
-void execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
+void execute(Instruction inst, int* pc, unsigned int* mem, int* regs, FILE* outFile) {
 		switch(inst.opcode) {	
 		case ADD:
 			regs[inst.dst] = inst.val0 + inst.val1;
@@ -141,13 +140,14 @@ void execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 		case HLT:
 			// Intentionally print one line break
 			fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc);
+			break;
 		default:
 			assert(0);
 			break;
 		}
 }
 
-void printFetch(Instruction inst, int instCount, int pc, int* mem, int* regs, FILE* outFile) {
+void printFetch(Instruction inst, int instCount, int pc, unsigned int* mem, int* regs, FILE* outFile) {
 	fprintf(outFile, "--- instruction %d (%04x) @ PC %d (%04x) -----------------------------------------------------------\n", 
 		instCount, instCount, pc, pc);
 	
