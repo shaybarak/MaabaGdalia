@@ -77,89 +77,89 @@ void decode(Instruction* inst, int* regs) {
 }
 
 void execute(Instruction inst, unsigned short* pc, unsigned int* mem, int* regs, FILE* outFile) {
-		switch(inst.opcode) {	
-		case ADD:
-			regs[inst.dst] = inst.val0 + inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d ADD %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case SUB:
-			regs[inst.dst] = inst.val0 - inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d SUB %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case LSF:
-			regs[inst.dst] = inst.val0 << inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d LSF %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case RSF:
-			regs[inst.dst] = inst.val0 >> inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d RSF %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case AND:
-			regs[inst.dst] = inst.val0 & inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d AND %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case OR:
-			regs[inst.dst] = inst.val0 | inst.val1;
-			fprintf(outFile, ">>>> EXEC: R[%d] = %d OR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case XOR:
-			regs[inst.dst] = inst.val0 ^ inst.val1;
-			fprintf(outFile,">>>> EXEC: R[%d] = %d XOR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
-			break;
-		case LHI:
-			regs[inst.dst] = (inst.val0 << 16) | (regs[inst.dst] & 0xffff);
-			fprintf(outFile,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", inst.dst, inst.val0);
-			break;
-		case LD:
-			regs[inst.dst] = mem[inst.val1 & 0xffff];
-			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1, mem[inst.val1 & 0xffff]);
-			break;
-		case ST:
-			mem[inst.val1 & 0xffff] = inst.val0;
-			fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", inst.val1, inst.src0, inst.val0);
-			break;
-		case JLT:
-			if (inst.val0 < inst.val1) {
-				regs[7] = *pc - 1;
-				*pc = inst.immediate;
-			}
-			fprintf(outFile, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
-			break;
-		case JLE:
-			if (inst.val0 <= inst.val1) {
-				regs[7] = *pc - 1;
-				*pc = inst.immediate;
-			}
-			fprintf(outFile, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
-			break;
-		case JEQ:
-			if (inst.val0 == inst.val1) {
-				regs[7] = *pc - 1;
-				*pc = inst.immediate;
-			}
-			fprintf(outFile, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
-			break;
-		case JNE:
-			if (inst.val0 != inst.val1) {
-				regs[7] = *pc - 1;
-				*pc = inst.immediate;
-			}
-			fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
-			break;
-		case JIN:
+	switch(inst.opcode) {	
+	case ADD:
+		regs[inst.dst] = inst.val0 + inst.val1;
+		fprintf(outFile, ">>>> EXEC: R[%d] = %d ADD %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case SUB:
+		regs[inst.dst] = inst.val0 - inst.val1;
+		fprintf(outFile, ">>>> EXEC: R[%d] = %d SUB %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case LSF:
+		regs[inst.dst] = inst.val0 << inst.val1;
+		fprintf(outFile, ">>>> EXEC: R[%d] = %d LSF %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case RSF:
+		regs[inst.dst] = inst.val0 >> inst.val1;
+		fprintf(outFile, ">>>> EXEC: R[%d] = %d RSF %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case AND:
+		regs[inst.dst] = inst.val0 & inst.val1;
+		fprintf(outFile, ">>>> EXEC: R[%d] = %d AND %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case OR:
+		regs[inst.dst] = inst.val0 | inst.val1;
+		fprintf(outFile, ">>>> EXEC: R[%d] = %d OR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case XOR:
+		regs[inst.dst] = inst.val0 ^ inst.val1;
+		fprintf(outFile,">>>> EXEC: R[%d] = %d XOR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
+		break;
+	case LHI:
+		regs[inst.dst] = (inst.val0 << 16) | (regs[inst.dst] & 0xffff);
+		fprintf(outFile,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", inst.dst, inst.val0);
+		break;
+	case LD:
+		regs[inst.dst] = mem[inst.val1 & 0xffff];
+		fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1, mem[inst.val1 & 0xffff]);
+		break;
+	case ST:
+		mem[inst.val1 & 0xffff] = inst.val0;
+		fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", inst.val1, inst.src0, inst.val0);
+		break;
+	case JLT:
+		if (inst.val0 < inst.val1) {
 			regs[7] = *pc - 1;
-			*pc = inst.val0;
-			fprintf(outFile, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", inst.src0, inst.val0);
-			break;
-		case HLT:
-			// Intentionally print one line break
-			fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc - 1);
-			break;
-		default:
-			printf("Illegal opcode %d!\n", inst.opcode);
-			exit(1);
-			break;
+			*pc = inst.immediate;
 		}
+		fprintf(outFile, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
+		break;
+	case JLE:
+		if (inst.val0 <= inst.val1) {
+			regs[7] = *pc - 1;
+			*pc = inst.immediate;
+		}
+		fprintf(outFile, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
+		break;
+	case JEQ:
+		if (inst.val0 == inst.val1) {
+			regs[7] = *pc - 1;
+			*pc = inst.immediate;
+		}
+		fprintf(outFile, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
+		break;
+	case JNE:
+		if (inst.val0 != inst.val1) {
+			regs[7] = *pc - 1;
+			*pc = inst.immediate;
+		}
+		fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
+		break;
+	case JIN:
+		regs[7] = *pc - 1;
+		*pc = inst.val0;
+		fprintf(outFile, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", inst.src0, inst.val0);
+		break;
+	case HLT:
+		// Intentionally print one line break
+		fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc - 1);
+		break;
+	default:
+		printf("Illegal opcode %d!\n", inst.opcode);
+		exit(1);
+		break;
+	}
 }
 
 void printFetch(Instruction inst, int instCount, unsigned short pc, unsigned int* mem, int* regs, FILE* outFile) {
