@@ -73,8 +73,8 @@ static void assemble_program(char *program_name)
 	asm_cmd(AND, 5, 3, 1, 1);		// 6:  Get multiplier lower bit
 	asm_cmd(JEQ, 0, 5, 0, 9);		// 7:  Test multiplier lower bit
 	asm_cmd(ADD, 4, 4, 2, 0);		// 8:  sum += multiplicand
-	asm_cmd(RSF, 2, 2, 1, 1);		// 9:  multiplicand << 1
-	asm_cmd(LSF, 3, 3, 1, 1);		// 10: multiplier >> 1
+	asm_cmd(LSF, 2, 2, 1, 1);		// 9:  multiplicand << 1
+	asm_cmd(RSF, 3, 3, 1, 1);		// 10: multiplier >> 1
 	asm_cmd(JEQ, 0, 0, 0, 5);		// 11: goto loop_positive
 	// loop_negative:
 	asm_cmd(AND, 5, 3, 1, 1);		// 12: Get multiplier lower bit
