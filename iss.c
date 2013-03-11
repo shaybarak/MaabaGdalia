@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #define REG_COUNT 8
 #define CMD_SIZE 32
@@ -55,7 +54,9 @@ char* toOpcodeName(Opcode opcode) {
    case JNE: 	return "JNE";
    case JIN: 	return "JIN";
    case HLT: 	return "HLT";
-   default:		assert(0);
+   default:
+   	printf("Illegal opcode %d!\n", opcode);
+   	exit(1);
    }
    return NULL;
 }
@@ -155,7 +156,8 @@ void execute(Instruction inst, unsigned short* pc, unsigned int* mem, int* regs,
 			fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc - 1);
 			break;
 		default:
-			assert(0);
+			printf("Illegal opcode %d!\n", inst.opcode);
+			exit(1);
 			break;
 		}
 }
