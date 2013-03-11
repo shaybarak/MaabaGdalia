@@ -70,12 +70,12 @@ static void assemble_program(char *program_name)
 	asm_cmd(JEQ, 0, 3, 0, 12);		// 4:  Exit condition (multiplier == 0)
 	asm_cmd(ADD, 4, 4, 2, 0);		// 5:  SUM += multiplicand
 	asm_cmd(SUB, 3, 3, 1, 1);		// 6:  multiplier -= 1
-	asm_cmd(JIN, 0, 0, 0, 4);		// 7:  goto loop_positive
+	asm_cmd(JEQ, 0, 0, 0, 4);		// 7:  goto loop_positive
 	// loop_negative:
 	asm_cmd(JEQ, 0, 3, 0, 12);		// 8:  Exit condition (multiplier == 0)
 	asm_cmd(SUB, 4, 4, 2, 0);		// 9:  SUM += multiplicand
 	asm_cmd(ADD, 3, 3, 1, 1);		// 10: multiplier -= 1
-	asm_cmd(JIN, 0, 0, 0, 8);		// 11: goto loop_negative
+	asm_cmd(JEQ, 0, 0, 0, 8);		// 11: goto loop_negative
 	// done:
 	asm_cmd(ST,  0, 4, 1, 1002);	// 12: output result
 	asm_cmd(HLT, 0, 0, 0, 0);
