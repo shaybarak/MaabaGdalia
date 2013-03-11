@@ -71,19 +71,19 @@ static void assemble_program(char *program_name)
 	asm_cmd(SUB, 3, 0, 3, 0);		// 5:  negate multiplier
 	asm_cmd(ADD, 6, 0, 0, 1);		// 6:  sign = negative
 	// loop:
-	asm_cmd(JEQ, 0, 3, 0, 12);		// 5:  exit condition (multiplier == 0)
-	asm_cmd(AND, 5, 3, 1, 1);		// 6:  get multiplier lower bit
-	asm_cmd(JEQ, 0, 5, 0, 9);		// 7:  test multiplier lower bit
-	asm_cmd(ADD, 4, 4, 2, 0);		// 8:  sum += multiplicand
-	asm_cmd(LSF, 2, 2, 1, 1);		// 9:  multiplicand << 1
-	asm_cmd(RSF, 3, 3, 1, 1);		// 10: multiplier >> 1
-	asm_cmd(JEQ, 0, 0, 0, 5);		// 11: goto loop
+	asm_cmd(JEQ, 0, 3, 0, 14);		// 7:  exit condition (multiplier == 0)
+	asm_cmd(AND, 5, 3, 1, 1);		// 8:  get multiplier lower bit
+	asm_cmd(JEQ, 0, 5, 0, 11);		// 9:  test multiplier lower bit
+	asm_cmd(ADD, 4, 4, 2, 0);		// 10:  sum += multiplicand
+	asm_cmd(LSF, 2, 2, 1, 1);		// 11:  multiplicand << 1
+	asm_cmd(RSF, 3, 3, 1, 1);		// 12: multiplier >> 1
+	asm_cmd(JEQ, 0, 0, 0, 7);		// 13: goto loop
 	// is_neg:
-	asm_cmd(JEQ, 0, 6, 0, 14);		// 12: if positive goto output
-	asm_cmd(SUB, 4, 0, 4, 0);		// 13: negate result
+	asm_cmd(JEQ, 0, 6, 0, 16);		// 14: if positive goto output
+	asm_cmd(SUB, 4, 0, 4, 0);		// 15: negate result
 	// output:
-	asm_cmd(ST,  0, 4, 1, 1002);	// 14: output result
-	asm_cmd(HLT, 0, 0, 0, 0);		// 15: halt
+	asm_cmd(ST,  0, 4, 1, 1002);	// 16: output result
+	asm_cmd(HLT, 0, 0, 0, 0);		// 17: halt
 	/* Multiplication table program starts here
 	   R2 = row
 	   R3 = column
