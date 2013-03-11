@@ -111,35 +111,48 @@ void execute(Instruction inst, int* pc, unsigned int* mem, int* regs, FILE* outF
 			break;
 		case LD:
 			regs[inst.dst] = mem[inst.val1];
-			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1);
+			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1, mem[inst.val1]);
 			break;
 		case ST:
 			mem[inst.val1] = inst.val0;
-			fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", inst.val1, inst.val0);
+			fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", inst.val1, inst.src0, inst.val0);
 			break;
 		case JLT:
-			*pc = (inst.val0 < inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
+			if (inst.val0 < inst.val1) {
+				regs[7] = *pc - 1;
+				*pc = inst.immediate;
+			}
+			fprintf(outFile, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
 			break;
 		case JLE:
-			*pc = (inst.val0 <= inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
+			if (inst.val0 <= inst.val1) {
+				regs[7] = *pc - 1;
+				*pc = inst.immediate;
+			}
+			fprintf(outFile, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
 			break;
 		case JEQ:
-			*pc = (inst.val0 == inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
+			if (inst.val0 == inst.val1) {
+				regs[7] = *pc - 1;
+				*pc = inst.immediate;
+			}
+			fprintf(outFile, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
 			break;
 		case JNE:
-			*pc = (inst.val0 != inst.val1) ? inst.immediate : *pc;
-			fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", inst.val0, inst.val0, inst.immediate);
+			if (inst.val0 != inst.val1) {
+				regs[7] = *pc - 1;
+				*pc = inst.immediate;
+			}
+			fprintf(outFile, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", inst.val0, inst.val1, *pc);
 			break;
 		case JIN:
+			regs[7] = *pc - 1;
 			*pc = inst.val0;
 			fprintf(outFile, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", inst.src0, inst.val0);
 			break;
 		case HLT:
 			// Intentionally print one line break
-			fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc);
+			fprintf(outFile, ">>>> EXEC: HALT at PC %04x<<<<\n", *pc - 1);
 			break;
 		default:
 			assert(0);
@@ -207,7 +220,7 @@ int main(int argc, char** argv) {
 		instCount++;
 	} while (inst.opcode != HLT);
 
-	fprintf(outFile, "sim finished at pc %d, %d instructions\n", pc, instCount);
+	fprintf(outFile, "sim finished at pc %d, %d instructions\n", pc - 1, instCount);
 	fclose(outFile);
 
 	return 0;
