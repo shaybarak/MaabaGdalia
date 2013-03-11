@@ -62,24 +62,26 @@ static void assemble_program(char *program_name)
 	asm_cmd(ST,  0, 3, 1, 15); // 7: MEM[15] = R3
 	asm_cmd(HLT, 0, 0, 0, 0);  // 8: Halt
 	*/
-	/* Multiplication program starts here
+	/* Multiplication program starts here */
 	asm_cmd(LD,  2, 0, 1, 1000);	// 0:  Load multiplicand
 	asm_cmd(LD,  3, 0, 1, 1001);	// 1:  Load multiplier
-	asm_cmd(ADD, 4, 0, 0, 0);		// 2:  SUM = 0
-	asm_cmd(JLT, 0, 3, 0, 8);		// 3:  If multiplier < 0 goto negative
+	asm_cmd(ADD, 4, 0, 0, 0);		// 2:  sum = 0
+	asm_cmd(JLT, 0, 3, 0, 9);		// 3:  If multiplier < 0 goto negative
 	// loop_positive:
-	asm_cmd(JEQ, 0, 3, 0, 12);		// 4:  Exit condition (multiplier == 0)
-	asm_cmd(ADD, 4, 4, 2, 0);		// 5:  SUM += multiplicand
-	asm_cmd(SUB, 3, 3, 1, 1);		// 6:  multiplier -= 1
-	asm_cmd(JEQ, 0, 0, 0, 4);		// 7:  goto loop_positive
+	asm_cmd(JEQ, 0, 3, 0, 14);		// 4:  Exit condition (multiplier == 0)
+	asm_cmd(ADD, 4, 4, 2, 0);		// 5:  sum += multiplicand
+	asm_cmd(RSF, 2, 2, 1, 1);		// 6:  multiplicand << 1
+	asm_cmd(LSF, 3, 3, 1, 1);		// 7:  multiplier >> 1
+	asm_cmd(JEQ, 0, 0, 0, 4);		// 8:  goto loop_positive
 	// loop_negative:
-	asm_cmd(JEQ, 0, 3, 0, 12);		// 8:  Exit condition (multiplier == 0)
-	asm_cmd(SUB, 4, 4, 2, 0);		// 9:  SUM += multiplicand
-	asm_cmd(ADD, 3, 3, 1, 1);		// 10: multiplier -= 1
-	asm_cmd(JEQ, 0, 0, 0, 8);		// 11: goto loop_negative
+	asm_cmd(JEQ, 0, 3, 0, 14);		// 9:  Exit condition (multiplier == 0)
+	asm_cmd(SUB, 4, 4, 2, 0);		// 10: sum -= multiplicand
+	asm_cmd(RSF, 2, 2, 1, 1);		// 11: multiplicand << 1
+	asm_cmd(LSF, 3, 3, 1, 1);		// 12: multiplier >> 1
+	asm_cmd(JEQ, 0, 0, 0, 8);		// 13: goto loop_negative
 	// done:
-	asm_cmd(ST,  0, 4, 1, 1002);	// 12: output result
-	asm_cmd(HLT, 0, 0, 0, 0);*/
+	asm_cmd(ST,  0, 4, 1, 1002);	// 14: output result
+	asm_cmd(HLT, 0, 0, 0, 0);
 	/* Multiplication table program starts here
 	   R2 = row
 	   R3 = column
@@ -88,7 +90,7 @@ static void assemble_program(char *program_name)
 	   R6 = memory boundary
 	*/
 
-	asm_cmd(ADD, 2, 0, 1, 10);		// 0:  row = 10
+	/*asm_cmd(ADD, 2, 0, 1, 10);		// 0:  row = 10
 	asm_cmd(ADD, 3, 0, 1, 10);		// 1:  column = 10
 	asm_cmd(ADD, 5, 0, 1, 2099);	// 2:  ptr = 2099
 	asm_cmd(ADD, 6, 0, 1, 10);		// 3:  saved_column = 10
@@ -110,7 +112,7 @@ static void assemble_program(char *program_name)
 	// restore:
 	asm_cmd(ADD, 3, 6, 0, 0);		// 16: column = saved_column
 	asm_cmd(JEQ, 0, 0, 0, 4);		// 17: goto test
-	asm_cmd(HLT, 0, 0, 0, 0);		// 18: halt
+	asm_cmd(HLT, 0, 0, 0, 0);		// 18: halt*/
 
 	// Original program memory init
 	//for (i = 0; i < 5; i++)
