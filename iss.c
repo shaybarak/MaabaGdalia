@@ -110,11 +110,11 @@ void execute(Instruction inst, unsigned short* pc, unsigned int* mem, int* regs,
 			fprintf(outFile,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", inst.dst, inst.val0);
 			break;
 		case LD:
-			regs[inst.dst] = mem[inst.val1];
-			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1, mem[inst.val1]);
+			regs[inst.dst] = mem[inst.val1 & 0xffff];
+			fprintf(outFile, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", inst.dst, inst.val1, mem[inst.val1 & 0xffff]);
 			break;
 		case ST:
-			mem[inst.val1] = inst.val0;
+			mem[inst.val1 & 0xffff] = inst.val0;
 			fprintf(outFile, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", inst.val1, inst.src0, inst.val0);
 			break;
 		case JLT:
