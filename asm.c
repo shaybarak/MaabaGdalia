@@ -86,7 +86,7 @@ static void assemble_program(char *program_name)
 	asm_cmd(JEQ, 0, 0, 0, 12);		// 18: goto loop_negative
 	// done:
 	asm_cmd(ST,  0, 4, 1, 1002);	// 19: output result
-	asm_cmd(HLT, 0, 0, 0, 0);
+	asm_cmd(HLT, 0, 0, 0, 0);		// 20: halt
 	/* Multiplication table program starts here
 	   R2 = row
 	   R3 = column
