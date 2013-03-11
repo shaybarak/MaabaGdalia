@@ -67,9 +67,9 @@ static void assemble_program(char *program_name)
 	asm_cmd(LD,  3, 0, 1, 1001);	// 1:  load multiplier
 	asm_cmd(ADD, 4, 0, 0, 0);		// 2:  sum = 0
 	asm_cmd(ADD, 6, 0, 0, 0);		// 3:  sign = positive
-	asm_cmd(JLT, 0, 0, 3, 5);		// 4:  if multiplier>0 goto loop
+	asm_cmd(JLT, 0, 0, 3, 7);		// 4:  if multiplier>0 goto loop
 	asm_cmd(SUB, 3, 0, 3, 0);		// 5:  negate multiplier
-	asm_cmd(ADD, 6, 0, 0, 1);		// 6:  sign = negative
+	asm_cmd(ADD, 6, 0, 1, 1);		// 6:  sign = negative
 	// loop:
 	asm_cmd(JEQ, 0, 3, 0, 14);		// 7:  exit condition (multiplier == 0)
 	asm_cmd(AND, 5, 3, 1, 1);		// 8:  get multiplier lower bit
