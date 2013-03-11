@@ -49,8 +49,9 @@ static void assemble_program(char *program_name)
 	pc = 0;
 
 	/*
-	 * Program starts here
+	 * Original program starts here
 	 */
+	/*
 	asm_cmd(ADD, 2, 1, 0, 15); // 0: R2 = 15
 	asm_cmd(ADD, 5, 1, 0, 20); // 1: R5 = 20
 	asm_cmd(ADD, 3, 1, 0, 0);  // 2: R3 = 0
@@ -60,11 +61,34 @@ static void assemble_program(char *program_name)
 	asm_cmd(JLT, 0, 2, 5, 3);  // 6: if R2 < R5 goto 3
 	asm_cmd(ST,  0, 3, 1, 15); // 7: MEM[15] = R3
 	asm_cmd(HLT, 0, 0, 0, 0);  // 8: Halt
+	*/
+	asm_cmd(LD,  2, 0, 1, 1000);	// 0:  Load multiplicand
+	asm_cmd(LD,  3, 0, 1, 1001);	// 1:  Load multiplier
+	asm_cmd(ADD, 4, 0, 0, 0);		// 2:  SUM = 0
+	asm_cmd(JLT, 0, 3, 0, 8);		// 3:  If multiplier < 0 goto negative
+	// loop_positive:
+	asm_cmd(JEQ, 0, 3, 0, 12);		// 4:  Exit condition (multiplier == 0)
+	asm_cmd(ADD, 4, 4, 2, 0);		// 5:  SUM += multiplicand
+	asm_cmd(SUB, 3, 3, 1, 1);		// 6:  multiplier -= 1
+	asm_cmd(JIN, 0, 0, 0, 4);		// 7:  goto loop_positive
+	// loop_negative:
+	asm_cmd(JEQ, 0, 3, 0, 12);		// 8:  Exit condition (multiplier == 0)
+	asm_cmd(SUB, 4, 4, 2, 0);		// 9:  SUM += multiplicand
+	asm_cmd(ADD, 3, 3, 1, 1);		// 10: multiplier -= 1
+	asm_cmd(JIN, 0, 0, 0, 8);		// 11: goto loop_negative
+	// done:
+	asm_cmd(ST,  0, 4, 1, 1002);	// 12: output result
+	asm_cmd(HLT, 0, 0, 0, 0);
 
-	for (i = 0; i < 5; i++)
-		mem[15+i] = i;
+	// Original program memory init
+	//for (i = 0; i < 5; i++)
+	//	mem[15+i] = i;
+	mem[1000] = 5;
+	mem[1001] = -2;
 
-	last_addr = 20;
+	// Original program memory init
+	//last_addr = 20;
+	last_addr = 1002;
 
 	fp = fopen(program_name, "w");
 	if (fp == NULL) {
