@@ -118,8 +118,8 @@ static void assemble_program(char *program_name)
 	//for (i = 0; i < 5; i++)
 	//	mem[15+i] = i;
 	// Multiplication program memory init
-	//mem[1000] = 5;
-	//mem[1001] = -2;
+	mem[1000] = 5;
+	mem[1001] = -2;
 
 	// Original program memory init
 	//last_addr = 20;
