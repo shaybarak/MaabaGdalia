@@ -107,7 +107,7 @@ void execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
 			fprintf(outFile,">>>> EXEC: R[%d] = %d XOR %d <<<<\n\n", inst.dst, inst.val0, inst.val1);
 			break;
 		case LHI:
-			regs[inst.dst] = inst.val0 | (regs[inst.dst] & 0xffff);
+			regs[inst.dst] = (inst.val0 << 16) | (regs[inst.dst] & 0xffff);
 			fprintf(outFile,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", inst.dst, inst.val0);
 			break;
 		case LD:
