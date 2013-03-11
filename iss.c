@@ -160,6 +160,9 @@ void execute(Instruction inst, unsigned short* pc, unsigned int* mem, int* regs,
 		exit(1);
 		break;
 	}
+	// Suppress assignments to R0 and R1
+	regs[0] = 0;
+	regs[1] = 0;
 }
 
 void printFetch(Instruction inst, int instCount, unsigned short pc, unsigned int* mem, int* regs, FILE* outFile) {
