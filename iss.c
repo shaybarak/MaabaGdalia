@@ -75,7 +75,7 @@ void decode(Instruction* inst, int* regs) {
 	inst->val1 = (inst->src1 == 1) ? inst->immediate : regs[inst->src1];
 }
 
-void execute(Instruction inst, int* pc, unsigned int* mem, int* regs, FILE* outFile) {
+void execute(Instruction inst, unsigned short* pc, unsigned int* mem, int* regs, FILE* outFile) {
 		switch(inst.opcode) {	
 		case ADD:
 			regs[inst.dst] = inst.val0 + inst.val1;
@@ -160,7 +160,7 @@ void execute(Instruction inst, int* pc, unsigned int* mem, int* regs, FILE* outF
 		}
 }
 
-void printFetch(Instruction inst, int instCount, int pc, unsigned int* mem, int* regs, FILE* outFile) {
+void printFetch(Instruction inst, int instCount, unsigned short pc, unsigned int* mem, int* regs, FILE* outFile) {
 	fprintf(outFile, "--- instruction %d (%04x) @ PC %d (%04x) -----------------------------------------------------------\n", 
 		instCount, instCount, pc, pc);
 	
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
 	int memIndex = 0;
 	FILE* inFile;
 	FILE* outFile;
-	int pc = 0;
+	unsigned short pc = 0;
 	int instCount = 0;
 	Instruction inst = {0};
 
