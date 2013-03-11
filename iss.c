@@ -154,9 +154,9 @@ void printFetch(Instruction inst, int instCount, int pc, unsigned int* mem, int*
 	fprintf(outFile, "pc = %04x, inst = %08x, opcode = %d (%s), dst = %d, src0 = %d, src1 = %d, immediate = %08x\n",
 		pc, mem[pc], inst.opcode, toOpcodeName(inst.opcode), inst.dst, inst.src0, inst.src1, inst.immediate);
 	
-	fprintf(outFile, "r[0] = 00000000 r[1] = %08x r[2] = %08x r[3] = %08x\n", inst.immediate, regs[2], regs[3]);
+	fprintf(outFile, "r[0] = 00000000 r[1] = %08x r[2] = %08x r[3] = %08x \n", inst.immediate, regs[2], regs[3]);
 	
-	fprintf(outFile, "r[4] = %08x r[5] = %08x r[6] = %08x r[7] = %08x\n\n", regs[4], regs[5], regs[6], regs[7]);
+	fprintf(outFile, "r[4] = %08x r[5] = %08x r[6] = %08x r[7] = %08x \n\n", regs[4], regs[5], regs[6], regs[7]);
 }
 
 int main(int argc, char** argv) {
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
 		instCount++;
 	} while (inst.opcode != HLT);
 
-	fprintf(outFile, "sim finished at pc %d, %d instructions\n\n", pc, instCount);
+	fprintf(outFile, "sim finished at pc %d, %d instructions\n", pc, instCount);
 	fclose(outFile);
 
 	return 0;
