@@ -28,12 +28,12 @@ typedef enum Opcode {
 } Opcode;
 
 typedef struct {
-	int unused		: 2;
-	Opcode opcode	: 5;
-	int dst			: 3;
-	int src0		: 3;
-	int src1		: 3;
-	int immediate	: 16;	
+	int unused			: 2;
+	Opcode opcode		: 5;
+	unsigned int dst	: 3;
+	unsigned int src0	: 3;
+	unsigned int src1	: 3;
+	int immediate		: 16;	
 	int val0;
 	int val1;
 } Instruction;
@@ -61,7 +61,7 @@ char* toOpcodeName(Opcode opcode) {
    return NULL;
 }
 
-Instruction fetch(int inst) {
+Instruction fetch(unsigned int inst) {
 	Instruction out;
 	out.opcode = (Opcode)((inst >> 25) & 0x1F);
 	out.dst = (inst >> 22) & 0x7;
@@ -71,9 +71,9 @@ Instruction fetch(int inst) {
 	return out;
 }
 
-void decode(Instruction inst, int* regs) {
-	inst.val0 = (inst.src0 == 1 || inst.opcode == LHI) ? inst.immediate : regs[inst.src0];
-	inst.val1 = (inst.src1 == 1) ? inst.immediate : regs[inst.src1];
+void decode(Instruction* inst, int* regs) {
+	inst->val0 = (inst->src0 == 1 || inst->opcode == LHI) ? inst->immediate : regs[inst->src0];
+	inst->val1 = (inst->src1 == 1) ? inst->immediate : regs[inst->src1];
 }
 
 void execute(Instruction inst, int* pc, int* mem, int* regs, FILE* outFile) {
@@ -151,7 +151,7 @@ void printFetch(Instruction inst, int instCount, int pc, int* mem, int* regs, FI
 	fprintf(outFile, "--- instruction %d (%04x) @ PC %d (%04x) -----------------------------------------------------------\n", 
 		instCount, instCount, pc, pc);
 	
-	fprintf(outFile, "pc = %04x, inst = 0088000f, opcode = %d (%s), dst = %d, src0 = %d, src1 = %d, immediate = %08x\n",
+	fprintf(outFile, "pc = %04x, inst = %08x, opcode = %d (%s), dst = %d, src0 = %d, src1 = %d, immediate = %08x\n",
 		pc, mem[pc], inst.opcode, toOpcodeName(inst.opcode), inst.dst, inst.src0, inst.src1, inst.immediate);
 	
 	fprintf(outFile, "r[0] = 00000000 r[1] = %08x r[2] = %08x r[3] = %08x\n", inst.immediate, regs[2], regs[3]);
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
 	char lineBuffer[CMD_SIZE];
 	char* inFilename = argv[1];
 	char* outFilename = "trace.txt";
-	int mem[MAX_MEMORY_SIZE] = {0};
+	unsigned int mem[MAX_MEMORY_SIZE] = {0};
 	int memIndex = 0;
 	FILE* inFile;
 	FILE* outFile;
@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
 	do {
 		inst = fetch(mem[pc]);
 		printFetch(inst, instCount, pc, mem, regs, outFile);
-		decode(inst, regs);
+		decode(&inst, regs);
 		pc++;
 		execute(inst, &pc, mem, regs, outFile);
 		instCount++;
