@@ -82,7 +82,7 @@ static void assemble_program(char *program_name)
 	asm_cmd(SUB, 4, 4, 2, 0);		// 14: sum -= multiplicand
 	asm_cmd(LSF, 2, 2, 1, 1);		// 15: multiplicand << 1
 	asm_cmd(RSF, 3, 3, 1, 1);		// 16: multiplier >> 1
-	asm_cmd(JEQ, 0, 0, 0, 8);		// 17: goto loop_negative
+	asm_cmd(JEQ, 0, 0, 0, 11);		// 17: goto loop_negative
 	// done:
 	asm_cmd(ST,  0, 4, 1, 1002);	// 18: output result
 	asm_cmd(HLT, 0, 0, 0, 0);
