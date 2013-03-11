@@ -71,7 +71,6 @@ Instruction fetch(int inst) {
 	return out;
 }
 
-
 void decode(Instruction inst, int* regs) {
 	inst.val0 = (inst.src0 == 1 || inst.opcode == LHI) ? inst.immediate : regs[inst.src0];
 	inst.val1 = (inst.src1 == 1) ? inst.immediate : regs[inst.src1];
