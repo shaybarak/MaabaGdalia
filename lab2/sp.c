@@ -8,7 +8,7 @@
 
 #include "llsim.h"
 
-#define sp_printf(a...)						\
+#define sp_printf(a...)        					\
 	do {							\
 		llsim_printf("sp: clock %d: ", llsim->clock);	\
 		llsim_printf(a);				\
@@ -133,73 +133,182 @@ static void dump_sram(sp_t *sp)
 
 static void sp_ctl(sp_t *sp)
 {
-	sp_registers_t *spro = sp->spro;
-	sp_registers_t *sprn = sp->sprn;
-	int i;
+  sp_registers_t *spro = sp->spro;
+  sp_registers_t *sprn = sp->sprn;
+  int i;
 
-	// sp_ctl
+  // sp_ctl
 
-	fprintf(cycle_trace_fp, "cycle %d\n", spro->cycle_counter);
-	for (i = 2; i <= 7; i++)
-		fprintf(cycle_trace_fp, "r%d %08x\n", i, spro->r[i]);
-	fprintf(cycle_trace_fp, "pc %08x\n", spro->pc);
-	fprintf(cycle_trace_fp, "inst %08x\n", spro->inst);
-	fprintf(cycle_trace_fp, "opcode %08x\n", spro->opcode);
-	fprintf(cycle_trace_fp, "dst %08x\n", spro->dst);
-	fprintf(cycle_trace_fp, "src0 %08x\n", spro->src0);
-	fprintf(cycle_trace_fp, "src1 %08x\n", spro->src1);
-	fprintf(cycle_trace_fp, "immediate %08x\n", spro->immediate);
-	fprintf(cycle_trace_fp, "alu0 %08x\n", spro->alu0);
-	fprintf(cycle_trace_fp, "alu1 %08x\n", spro->alu1);
-	fprintf(cycle_trace_fp, "aluout %08x\n", spro->aluout);
-	fprintf(cycle_trace_fp, "cycle_counter %08x\n", spro->cycle_counter);
-	fprintf(cycle_trace_fp, "ctl_state %08x\n\n", spro->ctl_state);
+  fprintf(cycle_trace_fp, "cycle %d\n", spro->cycle_counter);
+  for (i = 2; i <= 7; i++)
+    fprintf(cycle_trace_fp, "r%d %08x\n", i, spro->r[i]);
+  fprintf(cycle_trace_fp, "pc %08x\n", spro->pc);
+  fprintf(cycle_trace_fp, "inst %08x\n", spro->inst);
+  fprintf(cycle_trace_fp, "opcode %08x\n", spro->opcode);
+  fprintf(cycle_trace_fp, "dst %08x\n", spro->dst);
+  fprintf(cycle_trace_fp, "src0 %08x\n", spro->src0);
+  fprintf(cycle_trace_fp, "src1 %08x\n", spro->src1);
+  fprintf(cycle_trace_fp, "immediate %08x\n", spro->immediate);
+  fprintf(cycle_trace_fp, "alu0 %08x\n", spro->alu0);
+  fprintf(cycle_trace_fp, "alu1 %08x\n", spro->alu1);
+  fprintf(cycle_trace_fp, "aluout %08x\n", spro->aluout);
+  fprintf(cycle_trace_fp, "cycle_counter %08x\n", spro->cycle_counter);
+  fprintf(cycle_trace_fp, "ctl_state %08x\n\n", spro->ctl_state);
 
-	sprn->cycle_counter = spro->cycle_counter + 1;
+  sprn->cycle_counter = spro->cycle_counter + 1;
 
-	switch (spro->ctl_state) {
-	case CTL_STATE_IDLE:
-		sprn->pc = 0;
-		if (sp->start)
-			sprn->ctl_state = CTL_STATE_FETCH0;
-		break;
+  switch (spro->ctl_state) {
+  case CTL_STATE_IDLE:
+    sprn->pc = 0;
+    if (sp->start)
+      sprn->ctl_state = CTL_STATE_FETCH0;
+    break;
 
-	case CTL_STATE_FETCH0:
-		/***********************************
-		 * TODO: fill here
-		 **********************************/
-		break;
+  case CTL_STATE_FETCH0:
+    llsim_mem_read(sp->sram, spro->pc);
+    sprn->ctl_state = CTL_STATE_FETCH1;		
+    break;
 
-	case CTL_STATE_FETCH1:
-		/***********************************
-		 * TODO: fill here
-		 **********************************/
-		break;
+  case CTL_STATE_FETCH1:
+    sprn->inst = llsim_mem_extract_dataout(sp->sram, 31, 0);
+    sprn->ctl_state = CTL_STATE_DEC0;		
+    break;
 
-	case CTL_STATE_DEC0:
-		/***********************************
-		 * TODO: fill here
-		 **********************************/
-		break;
+  case CTL_STATE_DEC0:
+    sprn->opcode = (spro->inst >> 25) & 0x1F;
+    sprn->dst = (spro->inst >> 22) & 0x7;
+    sprn->src0 = (spro->inst >> 19) & 0x7;
+    sprn->src1 = (spro->inst >> 16) & 0x7;
+    sprn->immediate = (spro->inst) & 0xffff;	
+    // Sign-extend immediate
+    if (sprn->immediate & 0x8000) {
+      sprn->immediate |= 0xffff0000;
+    }
+    sprn->ctl_state = CTL_STATE_DEC1;
+    break;
 
-	case CTL_STATE_DEC1:
-		/***********************************
-		 * TODO: fill here
-		 **********************************/
-		break;
+  case CTL_STATE_DEC1:
+    sprn->alu0 = (spro->src0 == 1 || spro->opcode == LHI) ? spro->immediate : spro->r[spro->src0];
+    sprn->alu1 = (spro->src1 == 1) ? spro->immediate : spro->r[spro->src1];
+    sprn->ctl_state = CTL_STATE_EXEC0;
+    break;
 
-	case CTL_STATE_EXEC0:
-		/***********************************
-		 * TODO: fill here
-		 **********************************/
-		break;
+  case CTL_STATE_EXEC0:
+    switch(spro->opcode) {
+    case ADD:
+      sprn->aluout = spro->alu0 + spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = %d ADD %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case SUB:
+      sprn->aluout = spro->alu0 - spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = %d SUB %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case LSF:
+      sprn->aluout = spro->alu0 << spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = %d LSF %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case RSF:
+      sprn->aluout = spro->alu0 >> spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = %d RSF %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case AND:
+      sprn->aluout = spro->alu0 & spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = %d AND %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case OR:
+      sprn->aluout = spro->alu0 | spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = %d OR %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case XOR:
+      sprn->aluout = spro->alu0 ^ spro->alu1;
+      fprintf(inst_trace_fp,">>>> EXEC: R[%d] = %d XOR %d <<<<\n\n", spro->dst, spro->alu0, spro->alu1);
+      break;
+    case LHI:
+      sprn->aluout = (spro->alu0 << 16) | (sprn->aluout & 0xffff);
+      fprintf(inst_trace_fp,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", spro->dst, spro->alu0);
+      break;
+    case LD:	    
+      llsim_mem_read(sp->sram, spro->alu1 & 0xffff);
+      break;
+    case ST:
+      //will execute on EXEC1      
+      break;
+    case JLT:
+      sprn->aluout = spro->alu0 < spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      break;
+    case JLE:
+      sprn->aluout = spro->alu0 <= spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      break;
+    case JEQ:
+      sprn->aluout = spro->alu0 == spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      break;
+    case JNE:
+      sprn->aluout = spro->alu0 != spro->alu1;
+      fprintf(inst_trace_fp, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      break;
+    case JIN:
+      sprn->aluout = 1;
+      fprintf(inst_trace_fp, ">>>> EXEC: JIN R[%d] = %08x <<<<\n\n", spro->src0, spro->alu0);
+      break;
+    }
 
-	case CTL_STATE_EXEC1:
-		/***********************************
-		 * TODO: fill here
-		 **********************************/
-		break;
-	}
+    sprn->ctl_state = CTL_STATE_EXEC1;
+    break;
+
+  case CTL_STATE_EXEC1:
+
+    switch (spro->opcode) {
+    case ADD:
+    case SUB:
+    case LSF:
+    case RSF:
+    case AND:
+    case OR: 
+    case XOR:
+    case LHI:
+      if (spro->dst > 1) {
+	sprn->r[spro->dst] = spro->aluout;
+      }
+      sprn->pc = spro->pc + 1;
+      break;
+    
+    case LD:
+      if (spro->dst > 1) {
+	sprn->r[spro->dst] = llsim_mem_extract_dataout(sp->sram, 31, 0);    
+	fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", spro->dst, spro->alu1, sprn->r[spro->dst]);
+      }
+      sprn->pc = spro->pc + 1;
+      break;
+    
+    case ST:
+      llsim_mem_write(sp->sram, spro->aluout);
+      fprintf(inst_trace_fp, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", spro->alu1, spro->src0, spro->alu0);
+      sprn->pc = spro->pc + 1;
+      break;
+    
+    case JLT:
+    case JLE:
+    case JEQ:
+    case JNE:
+    case JIN:
+      sprn->pc = spro->aluout ? spro->alu0 : spro->pc + 1;
+      sprn->r[7] = spro->aluout ? spro->pc : spro->r[7];      
+      break;
+  
+    case HLT:
+      // Intentionally print one line break
+      fprintf(inst_trace_fp, ">>>> EXEC: HLT at PC %04x<<<<\n", spro->pc);
+      dump_sram(sp);
+      llsim_stop();
+      break;
+    }
+    sprn->ctl_state = (spro->inst == HLT) ? CTL_STATE_IDLE : CTL_STATE_FETCH0;
+    break;
+
+  }
 }
 
 static void sp_run(llsim_unit_t *unit)
