@@ -244,7 +244,7 @@ static void sp_ctl(sp_t *sp)
       llsim_mem_read(sp->sram, spro->alu1 & 0xffff);
       break;
     case ST:
-      //will execute on EXEC1      
+      llsim_mem_set_datain(sp->sram, spro->alu0, 31, 0);
       break;
     case JLT:
       sprn->aluout = spro->alu0 < spro->alu1;
@@ -297,7 +297,7 @@ static void sp_ctl(sp_t *sp)
       break;
     
     case ST:
-      llsim_mem_write(sp->sram, spro->aluout);
+      llsim_mem_write(sp->sram, spro->alu1);
       fprintf(inst_trace_fp, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", spro->alu1, spro->src0, spro->alu0);
       sprn->pc = spro->pc + 1;
       break;
