@@ -358,11 +358,10 @@ static void sp_ctl(sp_t *sp)
   }
 }
 
-static void sp_dma(sp_t *sp)
+static void dma_ctl(sp_t *sp)
 {
   sp_registers_t *spro = sp->spro;
   sp_registers_t *sprn = sp->sprn;
-  int i;
 
   fprintf(cycle_trace_fp, "dma_src %08x\n", spro->dma_src);
   fprintf(cycle_trace_fp, "dma_dst %08x\n", spro->dma_dst);
@@ -401,7 +400,7 @@ static void sp_dma(sp_t *sp)
   case DMA_STATE_WRITE:
     // TODO when to stall (FETCH0, EXEC0:LD, EXEC1:ST)
     // Write to memory
-    llsim_mem_write(sp->sram, sp->dma_dst);
+    llsim_mem_write(sp->sram, spro->dma_dst);
     sprn->dma_dst = spro->dma_dst + 1;
     sprn->dma_len = spro->dma_len - 1;
     if (spro->dma_len == 1) {
