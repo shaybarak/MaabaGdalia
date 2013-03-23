@@ -130,6 +130,18 @@ static void dump_sram(sp_t *sp)
 	fclose(fp);
 }
 
+static void printInstruction(sp_registers_t *sp) {
+  fprintf(inst_trace_fp, "--- instruction %d (%04x) @ PC %d (%04x) -----------------------------------------------------------\n",
+	  nr_simulated_instructions, nr_simulated_instructions, sp->pc, sp->pc);
+  
+  fprintf(inst_trace_fp, "pc = %04x, inst = %08x, opcode = %d (%s), dst = %d, src0 = %d, src1 = %d, immediate = %08x\n",
+	  sp->pc, sp->inst, sp->opcode, opcode_name[sp->opcode], sp->dst, sp->src0, sp->src1, sp->immediate);
+  
+  fprintf(inst_trace_fp, "r[0] = 00000000 r[1] = %08x r[2] = %08x r[3] = %08x \n", sp->immediate, sp->r[2], sp->r[3]);
+  fprintf(inst_trace_fp, "r[4] = %08x r[5] = %08x r[6] = %08x r[7] = %08x \n\n", sp->r[4], sp->r[5], sp->r[6], sp->r[7]);
+}
+
+
 
 static void sp_ctl(sp_t *sp)
 {
@@ -191,6 +203,7 @@ static void sp_ctl(sp_t *sp)
     sprn->alu0 = (spro->src0 == 1 || spro->opcode == LHI) ? spro->immediate : spro->r[spro->src0];
     sprn->alu1 = (spro->src1 == 1) ? spro->immediate : spro->r[spro->src1];
     sprn->ctl_state = CTL_STATE_EXEC0;
+    printInstruction(sprn);
     break;
 
   case CTL_STATE_EXEC0:
@@ -235,19 +248,19 @@ static void sp_ctl(sp_t *sp)
       break;
     case JLT:
       sprn->aluout = spro->alu0 < spro->alu1;
-      fprintf(inst_trace_fp, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      fprintf(inst_trace_fp, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->immediate : spro->pc + 1));
       break;
     case JLE:
       sprn->aluout = spro->alu0 <= spro->alu1;
-      fprintf(inst_trace_fp, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      fprintf(inst_trace_fp, ">>>> EXEC: JLE %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->immediate : spro->pc + 1));
       break;
     case JEQ:
       sprn->aluout = spro->alu0 == spro->alu1;
-      fprintf(inst_trace_fp, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      fprintf(inst_trace_fp, ">>>> EXEC: JEQ %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->immediate : spro->pc + 1));
       break;
     case JNE:
       sprn->aluout = spro->alu0 != spro->alu1;
-      fprintf(inst_trace_fp, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->alu0 : spro->pc));
+      fprintf(inst_trace_fp, ">>>> EXEC: JNE %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->immediate : spro->pc + 1));
       break;
     case JIN:
       sprn->aluout = 1;
@@ -259,7 +272,7 @@ static void sp_ctl(sp_t *sp)
     break;
 
   case CTL_STATE_EXEC1:
-
+    nr_simulated_instructions += 1;
     switch (spro->opcode) {
     case ADD:
     case SUB:
@@ -300,7 +313,8 @@ static void sp_ctl(sp_t *sp)
   
     case HLT:
       // Intentionally print one line break
-      fprintf(inst_trace_fp, ">>>> EXEC: HLT at PC %04x<<<<\n", spro->pc);
+      fprintf(inst_trace_fp, ">>>> EXEC: HALT at PC %04x<<<<\n", spro->pc);
+      fprintf(inst_trace_fp, "sim finished at pc %d, %d instructions\n", spro->pc, nr_simulated_instructions);
       dump_sram(sp);
       llsim_stop();
       break;
@@ -344,7 +358,7 @@ static void sp_generate_sram_memory_image(sp_t *sp, char *program_name)
         }
 	sp->memory_image_size = addr;
 
-        fprintf(inst_trace_fp, "program %s loaded, %d lines\n", program_name, addr);
+        fprintf(inst_trace_fp, "program %s loaded, %d lines\n\n", program_name, addr);
 
 	for (i = 0; i < sp->memory_image_size; i++)
 		llsim_mem_inject(sp->sram, i, sp->memory_image[i], 31, 0);
