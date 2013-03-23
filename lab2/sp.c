@@ -125,7 +125,7 @@ static void dump_sram(sp_t *sp)
                 printf("couldn't open file sram_out.txt\n");
                 exit(1);
 	}
-	for (i = 0; i < SP_SRAM_HEIGHT; i++)
+  for (i = 0; i < SP_SRAM_HEIGHT; i++)
 		fprintf(fp, "%08x\n", llsim_mem_extract(sp->sram, i, 31, 0));
 	fclose(fp);
 }
@@ -227,7 +227,7 @@ static void sp_ctl(sp_t *sp)
       sprn->aluout = (spro->alu0 << 16) | (sprn->aluout & 0xffff);
       fprintf(inst_trace_fp,">>>> EXEC: R[%d][31:16] = %d <<<<\n\n", spro->dst, spro->alu0);
       break;
-    case LD:	    
+    case LD:
       llsim_mem_read(sp->sram, spro->alu1 & 0xffff);
       break;
     case ST:
@@ -270,15 +270,15 @@ static void sp_ctl(sp_t *sp)
     case XOR:
     case LHI:
       if (spro->dst > 1) {
-	sprn->r[spro->dst] = spro->aluout;
+      	sprn->r[spro->dst] = spro->aluout;
       }
       sprn->pc = spro->pc + 1;
       break;
     
     case LD:
       if (spro->dst > 1) {
-	sprn->r[spro->dst] = llsim_mem_extract_dataout(sp->sram, 31, 0);    
-	fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", spro->dst, spro->alu1, sprn->r[spro->dst]);
+      	sprn->r[spro->dst] = llsim_mem_extract_dataout(sp->sram, 31, 0);    
+      	fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", spro->dst, spro->alu1, sprn->r[spro->dst]);
       }
       sprn->pc = spro->pc + 1;
       break;
@@ -294,7 +294,7 @@ static void sp_ctl(sp_t *sp)
     case JEQ:
     case JNE:
     case JIN:
-      sprn->pc = spro->aluout ? spro->alu0 : spro->pc + 1;
+      sprn->pc = spro->aluout ? spro->immediate : spro->pc + 1;
       sprn->r[7] = spro->aluout ? spro->pc : spro->r[7];      
       break;
   
@@ -307,7 +307,6 @@ static void sp_ctl(sp_t *sp)
     }
     sprn->ctl_state = (spro->inst == HLT) ? CTL_STATE_IDLE : CTL_STATE_FETCH0;
     break;
-
   }
 }
 
