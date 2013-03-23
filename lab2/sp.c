@@ -65,6 +65,32 @@ typedef struct sp_registers_s {
 	#define CTL_STATE_DEC1		4
 	#define CTL_STATE_EXEC0		5
 	#define CTL_STATE_EXEC1		6
+
+  // Flag indicates whether DMA machine is busy
+  int dma_busy;
+
+  // Source address for DMA
+  int dma_src;
+
+  // Destination address for DMA
+  int dma_dst;
+
+  // Remaining words to copy for DMA
+  int dma_len;
+
+  // DMA register as temporary storage between reads and writes
+  int dma_reg;
+
+  // DMA state machine control
+  int dma_state;
+
+  // DMA states
+  #define DMA_STATE_IDLE    0
+  #define DMA_STATE_READ    1
+  #define DMA_STATE_DATAOUT 2
+  #define DMA_STATE_DATAIN  3
+  #define DMA_STATE_WRITE   4
+
 } sp_registers_t;
 
 /*
@@ -101,8 +127,9 @@ static void sp_reset(sp_t *sp)
 #define OR  5
 #define XOR 6
 #define LHI 7
-#define LD 8
-#define ST 9
+#define LD  8
+#define ST  9
+#define DMA 10
 #define JLT 16
 #define JLE 17
 #define JEQ 18
@@ -111,7 +138,7 @@ static void sp_reset(sp_t *sp)
 #define HLT 24
 
 static char opcode_name[32][4] = {"ADD", "SUB", "LSF", "RSF", "AND", "OR", "XOR", "LHI",
-				 "LD", "ST", "U", "U", "U", "U", "U", "U",
+				 "LD", "ST", "DMA", "U", "U", "U", "U", "U",
 				 "JLT", "JLE", "JEQ", "JNE", "JIN", "U", "U", "U",
 				 "HLT", "U", "U", "U", "U", "U", "U", "U"};
 
@@ -246,6 +273,9 @@ static void sp_ctl(sp_t *sp)
     case ST:
       llsim_mem_set_datain(sp->sram, spro->alu0, 31, 0);
       break;
+    case DMA:
+      // TODO
+      break;
     case JLT:
       sprn->aluout = spro->alu0 < spro->alu1;
       fprintf(inst_trace_fp, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->immediate : spro->pc + 1));
@@ -301,6 +331,10 @@ static void sp_ctl(sp_t *sp)
       fprintf(inst_trace_fp, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", spro->alu1, spro->src0, spro->alu0);
       sprn->pc = spro->pc + 1;
       break;
+
+    case DMA:
+      // TODO
+      break;
     
     case JLT:
     case JLE:
@@ -324,6 +358,63 @@ static void sp_ctl(sp_t *sp)
   }
 }
 
+static void sp_dma(sp_t *sp)
+{
+  sp_registers_t *spro = sp->spro;
+  sp_registers_t *sprn = sp->sprn;
+  int i;
+
+  fprintf(cycle_trace_fp, "dma_src %08x\n", spro->dma_src);
+  fprintf(cycle_trace_fp, "dma_dst %08x\n", spro->dma_dst);
+  fprintf(cycle_trace_fp, "dma_len %08x\n", spro->dma_len);
+  fprintf(cycle_trace_fp, "dma_reg %08x\n", spro->dma_reg);
+  fprintf(cycle_trace_fp, "dma_state %08x\n\n", spro->dma_state);
+
+  sprn->cycle_counter = spro->cycle_counter + 1;
+
+  switch (spro->dma_state) {
+  case DMA_STATE_IDLE:
+    // Idle state for DMA machine
+    if (spro->dma_busy) {
+      // DMA operation requested, start copy
+      sprn->dma_state = DMA_STATE_READ;
+    }
+    break;
+  case DMA_STATE_READ:
+    // TODO when to stall (FETCH0, EXEC0:LD, EXEC1:ST)
+    // Read from memory
+    llsim_mem_read(sp->sram, spro->dma_src);
+    sprn->dma_src = spro->dma_src + 1;
+    sprn->dma_state = DMA_STATE_DATAOUT;
+    break;
+  case DMA_STATE_DATAOUT:
+    // Save memory word to DMA register
+    sprn->dma_reg = llsim_mem_extract_dataout(sp->sram, 31, 0);
+    sprn->dma_state = DMA_STATE_DATAIN;
+    break;
+  case DMA_STATE_DATAIN:
+    // TODO when to stall (EXEC0:ST)
+    // Write memory word to memory data input
+    llsim_mem_set_datain(sp->sram, spro->dma_reg, 31, 0);
+    sprn->dma_state = DMA_STATE_WRITE;
+    break;
+  case DMA_STATE_WRITE:
+    // TODO when to stall (FETCH0, EXEC0:LD, EXEC1:ST)
+    // Write to memory
+    llsim_mem_write(sp->sram, sp->dma_dst);
+    sprn->dma_dst = spro->dma_dst + 1;
+    sprn->dma_len = spro->dma_len - 1;
+    if (spro->dma_len == 1) {
+      // Next copy iteration
+      sprn->dma_state = DMA_STATE_READ;
+    } else {
+      // Done copying
+      sprn->dma_state = DMA_STATE_IDLE;
+    }
+    break;
+  }
+}
+
 static void sp_run(llsim_unit_t *unit)
 {
 	sp_t *sp = (sp_t *) unit->private;
@@ -337,6 +428,7 @@ static void sp_run(llsim_unit_t *unit)
 	sp->sram->write = 0;
 
 	sp_ctl(sp);
+  dma_ctl(sp);
 }
 
 static void sp_generate_sram_memory_image(sp_t *sp, char *program_name)
