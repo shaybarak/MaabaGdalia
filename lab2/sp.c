@@ -138,7 +138,7 @@ static void sp_reset(sp_t *sp)
 #define HLT 24
 
 static char opcode_name[32][4] = {"ADD", "SUB", "LSF", "RSF", "AND", "OR", "XOR", "LHI",
-				 "LD", "ST", "DMA", "U", "U", "U", "U", "U",
+				 "LD", "ST", "DMA", "DMP", "U", "U", "U", "U",
 				 "JLT", "JLE", "JEQ", "JNE", "JIN", "U", "U", "U",
 				 "HLT", "U", "U", "U", "U", "U", "U", "U"};
 
@@ -276,6 +276,9 @@ static void sp_ctl(sp_t *sp)
     case DMA:
       // TODO
       break;
+    case DMP:
+      // TODO
+      break;
     case JLT:
       sprn->aluout = spro->alu0 < spro->alu1;
       fprintf(inst_trace_fp, ">>>> EXEC: JLT %d, %d, %d <<<<\n\n", spro->alu0, spro->alu1, (sprn->aluout ? spro->immediate : spro->pc + 1));
@@ -333,6 +336,10 @@ static void sp_ctl(sp_t *sp)
       break;
 
     case DMA:
+      // TODO
+      break;
+
+    case DMP:
       // TODO
       break;
     
