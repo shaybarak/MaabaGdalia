@@ -387,7 +387,14 @@ static void dma_ctl(sp_t *sp)
     }
     break;
   case DMA_STATE_READ:
-    // TODO when to stall (FETCH0, EXEC0:LD, EXEC1:ST)
+    // Check for hazards
+    if (spro->ctl_state == CTL_STATE_FETCH0 ||
+        (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == LD) ||
+        (spro->ctl_state == CTL_STATE_EXEC1 && spro->opcode == ST)) {
+      // Bubble
+      sprn->dma_state = DMA_STATE_READ;
+      break;
+    }
     // Read from memory
     llsim_mem_read(sp->sram, spro->dma_src);
     sprn->dma_src = spro->dma_src + 1;
@@ -399,13 +406,25 @@ static void dma_ctl(sp_t *sp)
     sprn->dma_state = DMA_STATE_DATAIN;
     break;
   case DMA_STATE_DATAIN:
-    // TODO when to stall (EXEC0:ST)
+    // Check for hazards
+    if (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == ST) {
+      // Bubble
+      sprn->dma_state = DMA_STATE_DATAIN;
+      break;
+    }
     // Write memory word to memory data input
     llsim_mem_set_datain(sp->sram, spro->dma_reg, 31, 0);
     sprn->dma_state = DMA_STATE_WRITE;
     break;
   case DMA_STATE_WRITE:
-    // TODO when to stall (FETCH0, EXEC0:LD, EXEC1:ST)
+    // Check for hazards
+    if (spro->ctl_state == CTL_STATE_FETCH0 ||
+        (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == LD) ||
+        (spro->ctl_state == CTL_STATE_EXEC1 && spro->opcode == ST)) {
+      // Bubble
+      sprn->dma_state = DMA_STATE_WRITE;
+      break;
+    }
     // Write to memory
     llsim_mem_write(sp->sram, spro->dma_dst);
     sprn->dma_dst = spro->dma_dst + 1;
