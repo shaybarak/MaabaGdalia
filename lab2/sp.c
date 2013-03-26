@@ -130,6 +130,7 @@ static void sp_reset(sp_t *sp)
 #define LD  8
 #define ST  9
 #define DMA 10
+#define DMP 11
 #define JLT 16
 #define JLE 17
 #define JEQ 18
