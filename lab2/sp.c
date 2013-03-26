@@ -345,6 +345,7 @@ static void sp_ctl(sp_t *sp)
       sprn->dma_src = spro->alu0;
       sprn->dma_dst = spro->aluout;
       sprn->dma_len = spro->alu1;
+      sprn->pc = spro->pc + 1;
       break;
     
     case DMP:
@@ -365,7 +366,7 @@ static void sp_ctl(sp_t *sp)
       llsim_stop();
       break;
     }
-    
+
     sprn->ctl_state = (spro->inst == HLT) ? CTL_STATE_IDLE : CTL_STATE_FETCH0;
     break;
   }
