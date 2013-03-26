@@ -384,6 +384,7 @@ static void dma_ctl(sp_t *sp)
   sprn->cycle_counter = spro->cycle_counter + 1;
 
   switch (spro->dma_state) {
+  
   case DMA_STATE_IDLE:
     // Idle state for DMA machine
     if (spro->dma_busy) {
@@ -391,6 +392,7 @@ static void dma_ctl(sp_t *sp)
       sprn->dma_state = DMA_STATE_READ;
     }
     break;
+  
   case DMA_STATE_READ:
     // Check for hazards
     if (spro->ctl_state == CTL_STATE_FETCH0 ||
@@ -406,11 +408,13 @@ static void dma_ctl(sp_t *sp)
     sprn->dma_src = spro->dma_src + 1;
     sprn->dma_state = DMA_STATE_DATAOUT;
     break;
+  
   case DMA_STATE_DATAOUT:
     // Save memory word to DMA register
     sprn->dma_reg = llsim_mem_extract_dataout(sp->sram, 31, 0);
     sprn->dma_state = DMA_STATE_DATAIN;
     break;
+  
   case DMA_STATE_DATAIN:
     // Check for hazards
     if (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == ST) {
@@ -423,6 +427,7 @@ static void dma_ctl(sp_t *sp)
     llsim_mem_set_datain(sp->sram, spro->dma_reg, 31, 0);
     sprn->dma_state = DMA_STATE_WRITE;
     break;
+  
   case DMA_STATE_WRITE:
     // Check for hazards
     if (spro->ctl_state == CTL_STATE_FETCH0 ||
