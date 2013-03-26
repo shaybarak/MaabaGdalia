@@ -15,7 +15,7 @@
 	} while (0)
 
 int nr_simulated_instructions = 0;
-FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL;
+FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL;
 
 typedef struct sp_registers_s {
 	// 6 32 bit registers (r[0], r[1] don't exist)
@@ -375,11 +375,11 @@ static void dma_ctl(sp_t *sp)
   sp_registers_t *spro = sp->spro;
   sp_registers_t *sprn = sp->sprn;
 
-  fprintf(cycle_trace_fp, "dma_src %08x\n", spro->dma_src);
-  fprintf(cycle_trace_fp, "dma_dst %08x\n", spro->dma_dst);
-  fprintf(cycle_trace_fp, "dma_len %08x\n", spro->dma_len);
-  fprintf(cycle_trace_fp, "dma_reg %08x\n", spro->dma_reg);
-  fprintf(cycle_trace_fp, "dma_state %08x\n\n", spro->dma_state);
+  fprintf(dma_trace_fp, "dma_src %08x\n", spro->dma_src);
+  fprintf(dma_trace_fp, "dma_dst %08x\n", spro->dma_dst);
+  fprintf(dma_trace_fp, "dma_len %08x\n", spro->dma_len);
+  fprintf(dma_trace_fp, "dma_reg %08x\n", spro->dma_reg);
+  fprintf(dma_trace_fp, "dma_state %08x\n", spro->dma_state);
 
   sprn->cycle_counter = spro->cycle_counter + 1;
 
@@ -396,8 +396,9 @@ static void dma_ctl(sp_t *sp)
     if (spro->ctl_state == CTL_STATE_FETCH0 ||
         (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == LD) ||
         (spro->ctl_state == CTL_STATE_EXEC1 && spro->opcode == ST)) {
-      // Bubble
+      // Stall
       sprn->dma_state = DMA_STATE_READ;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_READ\n");
       break;
     }
     // Read from memory
@@ -413,8 +414,9 @@ static void dma_ctl(sp_t *sp)
   case DMA_STATE_DATAIN:
     // Check for hazards
     if (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == ST) {
-      // Bubble
+      // Stall
       sprn->dma_state = DMA_STATE_DATAIN;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_DATAIN\n");
       break;
     }
     // Write memory word to memory data input
@@ -426,8 +428,9 @@ static void dma_ctl(sp_t *sp)
     if (spro->ctl_state == CTL_STATE_FETCH0 ||
         (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == LD) ||
         (spro->ctl_state == CTL_STATE_EXEC1 && spro->opcode == ST)) {
-      // Bubble
+      // Stall
       sprn->dma_state = DMA_STATE_WRITE;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_WRITE\n");
       break;
     }
     // Write to memory
@@ -443,6 +446,8 @@ static void dma_ctl(sp_t *sp)
     }
     break;
   }
+
+  fprintf(dma_trace_fp, "\n");
 }
 
 static void sp_run(llsim_unit_t *unit)
@@ -533,6 +538,12 @@ void sp_init(char *program_name)
 		printf("couldn't open file cycle_trace.txt\n");
 		exit(1);
 	}
+
+  dma_trace_fp = fopen("dma_trace.txt", "w");
+  if (dma_trace_fp == NULL) {
+    printf("couldn't open file dma_trace.txt\n");
+    exit(1);
+  }
 
 	llsim_sp_unit = llsim_register_unit("sp", sp_run);
 	llsim_ur = llsim_allocate_registers(llsim_sp_unit, "sp_registers", sizeof(sp_registers_t));
