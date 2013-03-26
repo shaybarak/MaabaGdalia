@@ -401,7 +401,7 @@ static void dma_ctl(sp_t *sp)
       break;
     }
     // Read from memory
-    llsim_mem_read(sp->sram, spro->dma_src);
+    llsim_mem_read(sp->sram, spro->dma_src & 0xffff);
     sprn->dma_src = spro->dma_src + 1;
     sprn->dma_state = DMA_STATE_DATAOUT;
     break;
@@ -431,7 +431,7 @@ static void dma_ctl(sp_t *sp)
       break;
     }
     // Write to memory
-    llsim_mem_write(sp->sram, spro->dma_dst);
+    llsim_mem_write(sp->sram, spro->dma_dst & 0xffff);
     sprn->dma_dst = spro->dma_dst + 1;
     sprn->dma_len = spro->dma_len - 1;
     if (spro->dma_len == 1) {
