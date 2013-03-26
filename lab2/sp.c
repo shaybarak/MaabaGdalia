@@ -365,6 +365,7 @@ static void sp_ctl(sp_t *sp)
       llsim_stop();
       break;
     }
+    
     sprn->ctl_state = (spro->inst == HLT) ? CTL_STATE_IDLE : CTL_STATE_FETCH0;
     break;
   }
