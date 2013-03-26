@@ -15,7 +15,7 @@
 	} while (0)
 
 int nr_simulated_instructions = 0;
-FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL;
+FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL, *mem_trace_fp = NULL;
 
 typedef struct sp_registers_s {
 	// 6 32 bit registers (r[0], r[1] don't exist)
@@ -376,7 +376,7 @@ static void dma_ctl(sp_t *sp)
 {
   sp_registers_t *spro = sp->spro;
   sp_registers_t *sprn = sp->sprn;
-
+  fprintf(dma_trace_fp, "cycle %d\n", llsim->clock);
   fprintf(dma_trace_fp, "dma_src %08x\n", spro->dma_src);
   fprintf(dma_trace_fp, "dma_dst %08x\n", spro->dma_dst);
   fprintf(dma_trace_fp, "dma_len %08x\n", spro->dma_len);
@@ -418,7 +418,8 @@ static void dma_ctl(sp_t *sp)
   
   case DMA_STATE_DATAIN:
     // Check for hazards
-    if (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == ST) {
+    if ((spro->ctl_state == CTL_STATE_EXEC0 || spro->ctl_state == CTL_STATE_EXEC1 || spro->ctl_state == CTL_STATE_DEC1) && 
+	spro->opcode == ST) {
       // Stall
       sprn->dma_state = DMA_STATE_DATAIN;
       fprintf(dma_trace_fp, "Stalled in DMA_STATE_DATAIN\n");
@@ -553,7 +554,7 @@ void sp_init(char *program_name)
     exit(1);
   }
 
-	llsim_sp_unit = llsim_register_unit("sp", sp_run);
+  	llsim_sp_unit = llsim_register_unit("sp", sp_run);
 	llsim_ur = llsim_allocate_registers(llsim_sp_unit, "sp_registers", sizeof(sp_registers_t));
 	sp = llsim_malloc(sizeof(sp_t));
 	llsim_sp_unit->private = sp;
