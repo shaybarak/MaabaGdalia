@@ -15,7 +15,7 @@
 	} while (0)
 
 int nr_simulated_instructions = 0;
-FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL, *mem_trace_fp = NULL;
+FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL;
 
 typedef struct sp_registers_s {
 	// 6 32 bit registers (r[0], r[1] don't exist)
