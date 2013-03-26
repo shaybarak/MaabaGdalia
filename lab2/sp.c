@@ -442,6 +442,7 @@ static void dma_ctl(sp_t *sp)
       sprn->dma_state = DMA_STATE_READ;
     } else {
       // Done copying
+      sprn->dma_busy = 0;
       sprn->dma_state = DMA_STATE_IDLE;
     }
     break;
