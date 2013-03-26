@@ -275,10 +275,10 @@ static void sp_ctl(sp_t *sp)
       llsim_mem_set_datain(sp->sram, spro->alu0, 31, 0);
       break;
     case DMA:
-      // TODO
+      sprn->aluout = spro->r[spro->dst];
       break;
     case DMP:
-      // TODO
+      sprn->aluout = !(spro->dma_busy);
       break;
     case JLT:
       sprn->aluout = spro->alu0 < spro->alu1;
@@ -337,13 +337,17 @@ static void sp_ctl(sp_t *sp)
       break;
 
     case DMA:
-      // TODO
-      break;
-
-    case DMP:
-      // TODO
+      if (spro->dma_busy) {
+        // Suppress operation if DMA machine is already busy
+        break;
+      }
+      sprn->dma_busy = 1;
+      sprn->dma_src = spro->alu0;
+      sprn->dma_dst = spro->aluout;
+      sprn->dma_len = spro->alu1;
       break;
     
+    case DMP:
     case JLT:
     case JLE:
     case JEQ:
