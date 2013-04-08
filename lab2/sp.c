@@ -88,8 +88,7 @@ typedef struct sp_registers_s {
   #define DMA_STATE_IDLE    0
   #define DMA_STATE_READ    1
   #define DMA_STATE_DATAOUT 2
-  #define DMA_STATE_DATAIN  3
-  #define DMA_STATE_WRITE   4
+  #define DMA_STATE_WRITE   3
 
 } sp_registers_t;
 
@@ -271,8 +270,7 @@ static void sp_ctl(sp_t *sp)
     case LD:
       llsim_mem_read(sp->sram, spro->alu1 & 0xffff);
       break;
-    case ST:
-      llsim_mem_set_datain(sp->sram, spro->alu0, 31, 0);
+    case ST:      
       break;
     case DMA:
       sprn->aluout = spro->r[spro->dst];
@@ -331,6 +329,7 @@ static void sp_ctl(sp_t *sp)
       break;
     
     case ST:
+      llsim_mem_set_datain(sp->sram, spro->alu0, 31, 0);
       llsim_mem_write(sp->sram, spro->alu1);
       fprintf(inst_trace_fp, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", spro->alu1, spro->src0, spro->alu0);
       sprn->pc = spro->pc + 1;
@@ -413,20 +412,6 @@ static void dma_ctl(sp_t *sp)
   case DMA_STATE_DATAOUT:
     // Save memory word to DMA register
     sprn->dma_reg = llsim_mem_extract_dataout(sp->sram, 31, 0);
-    sprn->dma_state = DMA_STATE_DATAIN;
-    break;
-  
-  case DMA_STATE_DATAIN:
-    // Check for hazards
-    if ((spro->ctl_state == CTL_STATE_EXEC0 || spro->ctl_state == CTL_STATE_EXEC1 || spro->ctl_state == CTL_STATE_DEC1) && 
-	spro->opcode == ST) {
-      // Stall
-      sprn->dma_state = DMA_STATE_DATAIN;
-      fprintf(dma_trace_fp, "Stalled in DMA_STATE_DATAIN\n");
-      break;
-    }
-    // Write memory word to memory data input
-    llsim_mem_set_datain(sp->sram, spro->dma_reg, 31, 0);
     sprn->dma_state = DMA_STATE_WRITE;
     break;
   
@@ -435,12 +420,13 @@ static void dma_ctl(sp_t *sp)
     if (spro->ctl_state == CTL_STATE_FETCH0 ||
         (spro->ctl_state == CTL_STATE_EXEC0 && spro->opcode == LD) ||
         (spro->ctl_state == CTL_STATE_EXEC1 && spro->opcode == ST)) {
-      // Stall
+      // Stall      
       sprn->dma_state = DMA_STATE_WRITE;
       fprintf(dma_trace_fp, "Stalled in DMA_STATE_WRITE\n");
       break;
     }
     // Write to memory
+    llsim_mem_set_datain(sp->sram, spro->dma_reg, 31, 0);
     llsim_mem_write(sp->sram, spro->dma_dst & 0xffff);
     sprn->dma_src = spro->dma_src + 1;
     sprn->dma_dst = spro->dma_dst + 1;
