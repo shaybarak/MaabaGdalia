@@ -1,0 +1,49 @@
+$date
+    Apr 22, 2013  19:54:56
+$end
+$version
+    TOOL:	ncsim	11.10-p001
+$end
+$timescale
+    1 ns
+$end
+
+$scope module main $end
+$var reg       1 !    a  $end
+$var reg       1 "    b  $end
+$var wire      1 #    sum  $end
+$var wire      1 $    carry  $end
+
+$scope module halfadder $end
+$var wire      1 %    a  $end
+$var wire      1 &    b  $end
+$var wire      1 #    sum  $end
+$var wire      1 $    carry  $end
+$upscope $end
+
+$upscope $end
+
+$enddefinitions $end
+$dumpvars
+0!
+0"
+0#
+0$
+0%
+0&
+$end
+#5
+1"
+1&
+1#
+#10
+1!
+0"
+0&
+1%
+#15
+1"
+1&
+0#
+1$
+#20

@@ -1,0 +1,7 @@
+module div4(clk, in, reset, out);
+
+   input clk, in, reset;
+   output out;
+   
+   // FILL HERE
+endmodule

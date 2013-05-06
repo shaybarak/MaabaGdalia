@@ -1,0 +1,7 @@
+//
+// File created by:  ncverilog
+// Do not modify this file
+//
++access+rw
+div4_tb.v
+div4.v

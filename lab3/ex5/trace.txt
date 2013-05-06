@@ -1,0 +1,37 @@
+ncverilog: 11.10-p001: (c) Copyright 1995-2011 Cadence Design Systems, Inc.
+file: fulladder.v
+	module worklib.fulladder:v
+		errors: 0, warnings: 0
+		Caching library 'worklib' ....... Done
+	Elaborating the design hierarchy:
+	Building instance overlay tables: .................... Done
+	Generating native compiled code:
+		worklib.addsub_tb:v <0x4b1fa753>
+			streams:   5, words:  6846
+	Loading native compiled code:     .................... Done
+	Building instance specific data structures.
+	Design hierarchy summary:
+		              Instances  Unique
+		Modules:              7       4
+		Primitives:          24       3
+		Registers:            9       9
+		Scalar wires:         2       -
+		Expanded wires:       8       2
+		Vectored wires:       1       -
+		Initial blocks:       1       1
+		Cont. assignments:    1       1
+		Pseudo assignments:   3       3
+	Writing initial simulation snapshot: worklib.addsub_tb:v
+Loading snapshot worklib.addsub_tb:v .................... Done
+ncsim> source /home/cadence/tools/INCISIV/11.1/tools/inca/files/ncsimrc
+ncsim> run
+
+Test subtraction mode.
+
+Test addition mode.
+
+Pass all test
+
+Simulation complete via $finish(1) at time 1044 NS + 0
+./addsub_tb.v:80 	#10 $finish;
+ncsim> exit

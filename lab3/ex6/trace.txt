@@ -1,0 +1,38 @@
+ncverilog: 11.10-p001: (c) Copyright 1995-2011 Cadence Design Systems, Inc.
+Loading snapshot worklib.main:v .................... Done
+ncsim> source /home/cadence/tools/INCISIV/11.1/tools/inca/files/ncsimrc
+ncsim> run
+time                   10: in 0, out 0
+time                   20: in 1, out 1
+time                   30: in 1, out 0
+time                   40: in 1, out 1
+time                   50: in 0, out 1
+time                   60: in 0, out 1
+time                   70: in 1, out 0
+time                   80: in 0, out 0
+time                   90: in 0, out 0
+time                  100: in 0, out 0
+time                  110: in 1, out 1
+time                  120: in 1, out 0
+time                  130: in 0, out 0
+time                  140: in 0, out 0
+time                  150: in 1, out 1
+time                  160: in 1, out 0
+time                  170: in 1, out 1
+time                  180: in 1, out 0
+time                  190: in 0, out 0
+time                  200: in 0, out 0
+time                  210: in 0, out 0
+time                  220: in 0, out 0
+time                  230: in 1, out 1
+time                  240: in 1, out 0
+time                  250: in 1, out 1
+time                  260: in 1, out 0
+time                  270: in 1, out 1
+time                  280: in 0, out 1
+time                  290: in 1, out 0
+time                  300: in 1, out 1
+time                  310: in 1, out 0
+Simulation complete via $finish(1) at time 311 NS + 0
+./parity_tb.v:30         $finish;
+ncsim> exit
