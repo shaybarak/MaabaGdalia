@@ -1,0 +1,60 @@
+ncverilog: 11.10-p001: (c) Copyright 1995-2011 Cadence Design Systems, Inc.
+file: div4.v
+	module worklib.div4:v
+		errors: 0, warnings: 0
+		Caching library 'worklib' ....... Done
+	Elaborating the design hierarchy:
+	Building instance overlay tables: .................... Done
+	Generating native compiled code:
+		worklib.div4:v <0x22d0738c>
+			streams:   5, words:  1206
+		worklib.main:v <0x61e7f537>
+			streams:   6, words:  3312
+	Loading native compiled code:     .................... Done
+	Building instance specific data structures.
+	Design hierarchy summary:
+		             Instances  Unique
+		Modules:             2       2
+		Registers:           5       5
+		Scalar wires:        4       -
+		Always blocks:       4       4
+		Initial blocks:      1       1
+		Pseudo assignments:  3       3
+	Writing initial simulation snapshot: worklib.main:v
+Loading snapshot worklib.main:v .................... Done
+ncsim> source /home/cadence/tools/INCISIV/11.1/tools/inca/files/ncsimrc
+ncsim> run
+time                   10: in 0, out 1
+time                   20: in 1, out 0
+time                   30: in 1, out 0
+time                   40: in 1, out 0
+time                   50: in 0, out 0
+time                   60: in 0, out 1
+time                   70: in 1, out 0
+time                   80: in 0, out 0
+time                   90: in 0, out 1
+time                  100: in 0, out 1
+time                  110: in 1, out 0
+time                  120: in 1, out 0
+time                  130: in 0, out 0
+time                  140: in 0, out 1
+time                  150: in 1, out 0
+time                  160: in 1, out 0
+time                  170: in 1, out 0
+time                  180: in 1, out 0
+time                  190: in 0, out 0
+time                  200: in 0, out 1
+time                  210: in 0, out 1
+time                  220: in 0, out 1
+time                  230: in 1, out 0
+time                  240: in 1, out 0
+time                  250: in 1, out 0
+time                  260: in 1, out 0
+time                  270: in 1, out 0
+time                  280: in 0, out 0
+time                  290: in 1, out 0
+time                  300: in 1, out 0
+time                  310: in 1, out 0
+Simulation complete via $finish(1) at time 311 NS + 0
+./div4_tb.v:30         $finish;
+ncsim> exit
