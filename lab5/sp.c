@@ -331,8 +331,8 @@ static void sp_ctl(sp_t *sp)
   exec0_alu1_cmp = (spro->exec0_opcode == LHI) ? spro->exec0_dst : spro->exec0_src1;
   exec0_exec1_to_alu0_bypass = (spro->exec0_src0 > 1) && (spro->exec0_src0 == spro->exec1_dst) && (spro->exec1_opcode != ST) && (spro->exec1_active);
   exec0_exec1_to_alu1_bypass = (exec0_alu1_cmp > 1) && (exec0_alu1_cmp == spro->exec1_dst) && (spro->exec1_opcode != ST) && (spro->exec1_active);
-  exec0_mem_to_alu0_bypass = (spro->exec0_src0 > 1) && spro->mem_stall && (spro->exec0_src0 == spro->mem_dst) && (spro->exec1_active);
-  exec0_mem_to_alu1_bypass = (exec0_alu1_cmp > 1) && spro->mem_stall && (exec0_alu1_cmp == spro->mem_dst) && (spro->exec1_active);
+  exec0_mem_to_alu0_bypass = (spro->exec0_src0 > 1) && spro->mem_stall && (spro->exec0_src0 == spro->mem_dst);
+  exec0_mem_to_alu1_bypass = (exec0_alu1_cmp > 1) && spro->mem_stall && (exec0_alu1_cmp == spro->mem_dst);
   exec0_alu0_bypass_en = (exec0_exec1_to_alu0_bypass || exec0_mem_to_alu0_bypass);
   exec0_alu1_bypass_en = (exec0_exec1_to_alu1_bypass || exec0_mem_to_alu1_bypass);  
   exec0_alu0_bypass = (exec0_exec1_to_alu0_bypass && spro->exec1_active) ? spro->exec1_aluout : spro->mem_SRAM_DO;
