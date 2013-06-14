@@ -557,7 +557,15 @@ static void sp_ctl(sp_t *sp)
     case JLE:
     case JEQ:
     case JNE:
-    case JIN:     
+    case JIN:
+
+      // Execute branch
+      if (spro->exec1_aluout) {
+	sprn->exec1_pc = spro->exec1_immediate;
+	sprn->r[7] = spro->exec1_pc;
+      } else {
+	sprn->exec1_pc = spro->exec1_pc + 1;
+      }
 
       //update btb       
       btb_is_taken[btb_addr] = spro->exec1_aluout;
@@ -568,11 +576,7 @@ static void sp_ctl(sp_t *sp)
 	(spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate))) {
 	sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
 	  sprn->exec0_active = sprn->exec1_active = 0;
-	sprn->exec1_pc = spro->exec1_immediate;
 	sprn->fetch0_pc = spro->exec1_immediate;
-	sprn->r[7] = spro->exec1_pc;
-      } else {
-	sprn->exec1_pc = spro->exec1_pc + 1;       
       }
       break;
 
