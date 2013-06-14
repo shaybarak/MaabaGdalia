@@ -17,6 +17,11 @@
 int nr_simulated_instructions = 0;
 FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL;
 
+#define BTB_SIZE 64
+
+char btb_is_taken[BTB_SIZE] = {0}; // 1 bit array
+int btb_target [BTB_SIZE] = {0};   // 16 bits array
+
 typedef struct sp_registers_s {
   // 6 32 bit registers (r[0], r[1] don't exist)
   int r[8];
@@ -33,11 +38,15 @@ typedef struct sp_registers_s {
   int fetch1_pc; // 16 bits
   int fetch1_saved_inst; // 32 bits
   int fetch1_use_saved; // 1 bit
-
+  int fetch1_btb_target; //16 bits
+  int fetch1_btb_is_taken; //1 bit
+  
   // dec0
   int dec0_active; // 1 bit
   int dec0_pc; // 16 bits
   int dec0_inst; // 32 bits
+  int dec0_btb_target; //16 bits
+  int dec0_btb_is_taken; //1 bit
 
   // dec1
   int dec1_active; // 1 bit
@@ -48,6 +57,8 @@ typedef struct sp_registers_s {
   int dec1_src1; // 3 bits
   int dec1_dst; // 3 bits
   int dec1_immediate; // 32 bits
+  int dec1_btb_target; //16 bits
+  int dec1_btb_is_taken; //1 bit
 
   // exec0
   int exec0_active; // 1 bit
@@ -60,6 +71,8 @@ typedef struct sp_registers_s {
   int exec0_immediate; // 32 bits
   int exec0_alu0; // 32 bits
   int exec0_alu1; // 32 bits
+  int exec0_btb_target; //16 bits
+  int exec0_btb_is_taken; //1 bit
 
   // exec1
   int exec1_active; // 1 bit
@@ -72,7 +85,9 @@ typedef struct sp_registers_s {
   int exec1_immediate; // 32 bits
   int exec1_alu0; // 32 bits
   int exec1_alu1; // 32 bits
-  int exec1_aluout;
+  int exec1_aluout; //32 bits
+  int exec1_btb_target; //16 bits
+  int exec1_btb_is_taken; //1 bit
 
   // MEM stall
   int mem_stall; // 1 bit
@@ -246,10 +261,14 @@ static void sp_ctl(sp_t *sp)
 
   fprintf(cycle_trace_fp, "fetch1_active %d\n", spro->fetch1_active);
   fprintf(cycle_trace_fp, "fetch1_pc %08x\n", spro->fetch1_pc);
+  fprintf(cycle_trace_fp, "fetch1_btb_is_taken %d\n", spro->fetch1_btb_is_taken);
+  fprintf(cycle_trace_fp, "fetch1_btb_target %08x\n", spro->fetch1_btb_target);
 
   fprintf(cycle_trace_fp, "dec0_active %d\n", spro->dec0_active);
   fprintf(cycle_trace_fp, "dec0_pc %08x\n", spro->dec0_pc);
   fprintf(cycle_trace_fp, "dec0_inst %08x\n", spro->dec0_inst); // 32 bits
+  fprintf(cycle_trace_fp, "dec0_btb_is_taken %d\n", spro->dec0_btb_is_taken);
+  fprintf(cycle_trace_fp, "dec0_btb_target %08x\n", spro->dec0_btb_target);
 
   fprintf(cycle_trace_fp, "dec1_active %d\n", spro->dec1_active);
   fprintf(cycle_trace_fp, "dec1_pc %08x\n", spro->dec1_pc); // 16 bits
@@ -259,6 +278,8 @@ static void sp_ctl(sp_t *sp)
   fprintf(cycle_trace_fp, "dec1_src1 %08x\n", spro->dec1_src1); // 3 bits
   fprintf(cycle_trace_fp, "dec1_dst %08x\n", spro->dec1_dst); // 3 bits
   fprintf(cycle_trace_fp, "dec1_immediate %08x\n", spro->dec1_immediate); // 32 bits
+  fprintf(cycle_trace_fp, "dec1_btb_is_taken %d\n", spro->dec1_btb_is_taken);
+  fprintf(cycle_trace_fp, "dec1_btb_target %08x\n", spro->dec1_btb_target);
 
   fprintf(cycle_trace_fp, "exec0_active %d\n", spro->exec0_active);
   fprintf(cycle_trace_fp, "exec0_pc %08x\n", spro->exec0_pc); // 16 bits
@@ -270,6 +291,8 @@ static void sp_ctl(sp_t *sp)
   fprintf(cycle_trace_fp, "exec0_immediate %08x\n", spro->exec0_immediate); // 32 bits
   fprintf(cycle_trace_fp, "exec0_alu0 %08x\n", spro->exec0_alu0); // 32 bits
   fprintf(cycle_trace_fp, "exec0_alu1 %08x\n", spro->exec0_alu1); // 32 bits
+  fprintf(cycle_trace_fp, "exec0_btb_is_taken %d\n", spro->exec0_btb_is_taken);
+  fprintf(cycle_trace_fp, "exec0_btb_target %08x\n", spro->exec0_btb_target);
 
   fprintf(cycle_trace_fp, "exec1_active %d\n", spro->exec1_active);
   fprintf(cycle_trace_fp, "exec1_pc %08x\n", spro->exec1_pc); // 16 bits
@@ -282,6 +305,8 @@ static void sp_ctl(sp_t *sp)
   fprintf(cycle_trace_fp, "exec1_alu0 %08x\n", spro->exec1_alu0); // 32 bits
   fprintf(cycle_trace_fp, "exec1_alu1 %08x\n", spro->exec1_alu1); // 32 bits
   fprintf(cycle_trace_fp, "exec1_aluout %08x\n", spro->exec1_aluout);
+  fprintf(cycle_trace_fp, "exec1_btb_is_taken %d\n", spro->exec1_btb_is_taken);
+  fprintf(cycle_trace_fp, "exec1_btb_target %08x\n", spro->exec1_btb_target);
   
   sp_printf("cycle_counter %08x\n", spro->cycle_counter);
   sp_printf("r2 %08x, r3 %08x\n", spro->r[2], spro->r[3]);
@@ -342,10 +367,18 @@ static void sp_ctl(sp_t *sp)
 
   // fetch0
   if (spro->fetch0_active && !fetch0_stalled) {
+    int btb_addr = spro->fetch0_pc % BTB_SIZE;
     llsim_mem_read(sp->srami, spro->fetch0_pc);
+    if (btb_is_taken[btb_addr]) {
+      sprn->fetch0_pc = btb_target[btb_addr];
+    } else {
+      sprn->fetch0_pc = spro->fetch0_pc + 1;
+    }
+    
     sprn->fetch1_active = 1;
     sprn->fetch1_pc = spro->fetch0_pc;
-    sprn->fetch0_pc++;
+    sprn->fetch1_btb_is_taken = btb_is_taken[btb_addr];
+    sprn->fetch1_btb_target = btb_target[btb_addr];
   }
 	
   // fetch1
@@ -359,6 +392,8 @@ static void sp_ctl(sp_t *sp)
       sprn->dec0_active = 1;
       sprn->dec0_inst = spro->fetch1_use_saved ? spro->fetch1_saved_inst : inst;
       sprn->dec0_pc = spro->fetch1_pc;
+      sprn->dec0_btb_is_taken = spro->fetch1_btb_is_taken;
+      sprn->dec0_btb_target = spro->fetch1_btb_target;
     }
   }
 	
@@ -378,6 +413,8 @@ static void sp_ctl(sp_t *sp)
     } else {
       sprn->dec1_immediate = immediate;
     }
+    sprn->dec1_btb_is_taken = sprn->dec0_btb_is_taken;
+    sprn->dec1_btb_target = sprn->dec0_btb_target;
   }
 
   // dec1
@@ -399,6 +436,8 @@ static void sp_ctl(sp_t *sp)
       dec1_r1_final = dec1_r1_bypass_en ? dec1_r1_bypass : spro->r[spro->dec1_src1];
       sprn->exec0_alu1 = (spro->dec1_src1 == 1) ? spro->dec1_immediate : dec1_r1_final;
     }
+    sprn->exec0_btb_is_taken = sprn->dec1_btb_is_taken;
+    sprn->exec0_btb_target = sprn->dec1_btb_target;
   }
 
   // exec0
@@ -417,7 +456,7 @@ static void sp_ctl(sp_t *sp)
     exec0_alu1_final = exec0_alu1_bypass_en ? exec0_alu1_bypass : spro->exec0_alu1;
     sprn->exec1_alu0 = exec0_alu0_final;
     sprn->exec1_alu1 = exec0_alu1_final;    
-
+    
     switch(spro->exec0_opcode) {
     case ADD:
       sprn->exec1_aluout = exec0_alu0_final + exec0_alu1_final;
@@ -464,6 +503,9 @@ static void sp_ctl(sp_t *sp)
       sprn->exec1_aluout = 1;
       break;
     }
+    sprn->exec1_btb_is_taken = sprn->exec0_btb_is_taken;
+    sprn->exec1_btb_target = sprn->exec0_btb_target;
+
   }
   if (exec0_stalled) {
     sprn->exec1_active = 0;
@@ -475,6 +517,9 @@ static void sp_ctl(sp_t *sp)
     printExecution(spro);
 
     sprn->mem_stall = 0;
+    int btb_addr = spro->exec1_pc % BTB_SIZE;
+    btb_is_taken[btb_addr] = 0;
+
     switch (spro->exec1_opcode) {
     case ADD:
     case SUB:
@@ -512,9 +557,14 @@ static void sp_ctl(sp_t *sp)
     case JLE:
     case JEQ:
     case JNE:
-    case JIN:
-      if (spro->exec1_aluout) {
-	//flush pipeline
+    case JIN:     
+
+      //update btb       
+      btb_is_taken[btb_addr] = spro->exec1_aluout;
+      btb_target[btb_addr] = spro->exec1_immediate;
+      
+      //flush pipeline if needed
+      if ((spro->exec1_aluout != spro->exec1_btb_is_taken) || (spro->exec1_btb_target != spro->exec1_immediate)) {
 	sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
 	  sprn->exec0_active = sprn->exec1_active = 0;
 	sprn->exec1_pc = spro->exec1_immediate;
@@ -522,7 +572,7 @@ static void sp_ctl(sp_t *sp)
 	sprn->r[7] = spro->exec1_pc;
       } else {
 	sprn->exec1_pc = spro->exec1_pc + 1;       
-      };
+      }
       break;
 
     case HLT:
@@ -533,6 +583,7 @@ static void sp_ctl(sp_t *sp)
       dump_sram(sp, "sramd_out.txt", sp->sramd);
       break;
     }
+    
   }
 }
 
