@@ -250,7 +250,7 @@ static void sp_ctl(sp_t *sp)
   int exec0_alu1_cmp = 0;
   
   
-
+  fprintf(cycle_trace_fp, "nr_simulated_instructions %d\n", nr_simulated_instructions);
   fprintf(cycle_trace_fp, "cycle %d\n", spro->cycle_counter);
   fprintf(cycle_trace_fp, "cycle_counter %08x\n", spro->cycle_counter);
   for (i = 2; i <= 7; i++)
@@ -361,9 +361,9 @@ static void sp_ctl(sp_t *sp)
   fprintf(cycle_trace_fp, "\n");
 
   //TODO remove
-  if (spro->cycle_counter > 400) {
+  /*if (spro->cycle_counter > 400) {
    llsim_stop();
-  }
+   }*/
 
   // fetch0
   if (spro->fetch0_active && !fetch0_stalled) {
@@ -532,7 +532,6 @@ static void sp_ctl(sp_t *sp)
       if (spro->exec1_dst > 1) {
 	sprn->r[spro->exec1_dst] = spro->exec1_aluout;
       }
-      sprn->exec1_pc = spro->exec1_pc + 1;
       break;
 
     case LD:
@@ -543,14 +542,12 @@ static void sp_ctl(sp_t *sp)
         sprn->mem_dst = spro->exec1_dst;
 	fprintf(inst_trace_fp, ">>>> EXEC: R[%d] = MEM[%d] = %08x <<<<\n\n", spro->exec1_dst, spro->exec1_alu1, sprn->r[spro->exec1_dst]);
       }
-      sprn->exec1_pc = spro->exec1_pc + 1;
       break;
 	    
     case ST:
       llsim_mem_set_datain(sp->sramd, spro->exec1_alu0, 31, 0);
       llsim_mem_write(sp->sramd, spro->exec1_alu1);
       fprintf(inst_trace_fp, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", spro->exec1_alu1, spro->exec1_src0, spro->exec1_alu0);
-      sprn->exec1_pc = spro->exec1_pc + 1;
       break;
 
     case JLT:
@@ -561,10 +558,7 @@ static void sp_ctl(sp_t *sp)
 
       // Execute branch
       if (spro->exec1_aluout) {
-	sprn->exec1_pc = spro->exec1_immediate;
 	sprn->r[7] = spro->exec1_pc;
-      } else {
-	sprn->exec1_pc = spro->exec1_pc + 1;
       }
 
       //update btb       
@@ -576,7 +570,7 @@ static void sp_ctl(sp_t *sp)
 	(spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate))) {
 	sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
 	  sprn->exec0_active = sprn->exec1_active = 0;
-	sprn->fetch0_pc = spro->exec1_immediate;
+	sprn->fetch0_pc = spro->exec1_aluout ? spro->exec1_immediate : spro->exec1_pc + 1;
       }
       break;
 
@@ -588,7 +582,6 @@ static void sp_ctl(sp_t *sp)
       dump_sram(sp, "sramd_out.txt", sp->sramd);
       break;
     }
-    
   }
 }
 
