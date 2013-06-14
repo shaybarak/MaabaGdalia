@@ -361,9 +361,9 @@ static void sp_ctl(sp_t *sp)
   fprintf(cycle_trace_fp, "\n");
 
   //TODO remove
-  //if (spro->cycle_counter > 400) {
-  //  llsim_stop();
-  //}
+  if (spro->cycle_counter > 400) {
+   llsim_stop();
+  }
 
   // fetch0
   if (spro->fetch0_active && !fetch0_stalled) {
@@ -413,8 +413,8 @@ static void sp_ctl(sp_t *sp)
     } else {
       sprn->dec1_immediate = immediate;
     }
-    sprn->dec1_btb_is_taken = sprn->dec0_btb_is_taken;
-    sprn->dec1_btb_target = sprn->dec0_btb_target;
+    sprn->dec1_btb_is_taken = spro->dec0_btb_is_taken;
+    sprn->dec1_btb_target = spro->dec0_btb_target;
   }
 
   // dec1
@@ -436,8 +436,8 @@ static void sp_ctl(sp_t *sp)
       dec1_r1_final = dec1_r1_bypass_en ? dec1_r1_bypass : spro->r[spro->dec1_src1];
       sprn->exec0_alu1 = (spro->dec1_src1 == 1) ? spro->dec1_immediate : dec1_r1_final;
     }
-    sprn->exec0_btb_is_taken = sprn->dec1_btb_is_taken;
-    sprn->exec0_btb_target = sprn->dec1_btb_target;
+    sprn->exec0_btb_is_taken = spro->dec1_btb_is_taken;
+    sprn->exec0_btb_target = spro->dec1_btb_target;
   }
 
   // exec0
@@ -503,8 +503,8 @@ static void sp_ctl(sp_t *sp)
       sprn->exec1_aluout = 1;
       break;
     }
-    sprn->exec1_btb_is_taken = sprn->exec0_btb_is_taken;
-    sprn->exec1_btb_target = sprn->exec0_btb_target;
+    sprn->exec1_btb_is_taken = spro->exec0_btb_is_taken;
+    sprn->exec1_btb_target = spro->exec0_btb_target;
 
   }
   if (exec0_stalled) {
@@ -564,7 +564,8 @@ static void sp_ctl(sp_t *sp)
       btb_target[btb_addr] = spro->exec1_immediate;
       
       //flush pipeline if needed
-      if ((spro->exec1_aluout != spro->exec1_btb_is_taken) || (spro->exec1_btb_target != spro->exec1_immediate)) {
+      if ((spro->exec1_aluout != spro->exec1_btb_is_taken) || 
+	(spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate))) {
 	sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
 	  sprn->exec0_active = sprn->exec1_active = 0;
 	sprn->exec1_pc = spro->exec1_immediate;
