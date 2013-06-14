@@ -8,7 +8,7 @@
 
 #include "llsim.h"
 
-#define sp_printf(a...)  				\
+#define sp_printf(a...)					\
   do {							\
     llsim_printf("sp: clock %d: ", llsim->clock);	\
     llsim_printf(a);					\
@@ -297,17 +297,17 @@ static void sp_ctl(sp_t *sp)
     sprn->fetch0_active = 1;
 
   // Establish bypass signals
-  dec1_r0_bypass_en = (spro->dec1_src0 == spro->exec1_dst);
+  dec1_r0_bypass_en = (spro->dec1_src0 == spro->exec1_dst) && (spro->exec1_active);
   dec1_r0_bypass = spro->exec1_aluout;
   dec1_r1_cmp = (spro->dec1_opcode == LHI) ? spro->dec1_dst : spro->dec1_src1;
-  dec1_r1_bypass_en = (dec1_r1_cmp == spro->exec1_dst);
+  dec1_r1_bypass_en = (dec1_r1_cmp == spro->exec1_dst) && (spro->exec1_active);
   dec1_r1_bypass = spro->exec1_aluout;
   
   exec0_alu1_cmp = (spro->exec0_opcode == LHI) ? spro->exec0_dst : spro->exec0_src1;
-  exec0_exec1_to_alu0_bypass = ((spro->exec0_src0 == spro->exec1_dst) && (spro->exec1_opcode != ST));
-  exec0_exec1_to_alu1_bypass = ((exec0_alu1_cmp == spro->exec1_dst) && (spro->exec1_opcode != ST));
-  exec0_mem_to_alu0_bypass = spro->mem_stall && (spro->exec0_src0 == spro->mem_dst);
-  exec0_mem_to_alu1_bypass = spro->mem_stall && (exec0_alu1_cmp == spro->mem_dst);
+  exec0_exec1_to_alu0_bypass = (spro->exec0_src0 == spro->exec1_dst) && (spro->exec1_opcode != ST) && (spro->exec1_active);
+  exec0_exec1_to_alu1_bypass = (exec0_alu1_cmp == spro->exec1_dst) && (spro->exec1_opcode != ST) && (spro->exec1_active);
+  exec0_mem_to_alu0_bypass = spro->mem_stall && (spro->exec0_src0 == spro->mem_dst) && (spro->exec1_active);
+  exec0_mem_to_alu1_bypass = spro->mem_stall && (exec0_alu1_cmp == spro->mem_dst) && (spro->exec1_active);
   exec0_alu0_bypass_en = (exec0_exec1_to_alu0_bypass || exec0_mem_to_alu0_bypass);
   exec0_alu1_bypass_en = (exec0_exec1_to_alu1_bypass || exec0_mem_to_alu1_bypass);  
   exec0_alu0_bypass = (exec0_exec1_to_alu0_bypass && spro->exec1_active) ? spro->exec1_aluout : spro->mem_SRAM_DO;
@@ -335,9 +335,10 @@ static void sp_ctl(sp_t *sp)
 
   fprintf(cycle_trace_fp, "\n");
 
-  if (spro->cycle_counter > 400) {
-    llsim_stop();
-  }
+  //TODO remove
+  //if (spro->cycle_counter > 400) {
+  //  llsim_stop();
+  //}
 
   // fetch0
   if (spro->fetch0_active && !fetch0_stalled) {
@@ -618,4 +619,4 @@ void sp_init(char *program_name)
   sp->start = 1;
 	
   // c2v_translate_end
-}
+} 
