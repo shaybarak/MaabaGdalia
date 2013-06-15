@@ -17,7 +17,7 @@
 int nr_simulated_instructions = 0;
 FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL;
 
-#define BTB_SIZE 64
+#define BTB_SIZE 8
 
 char btb_is_taken[BTB_SIZE] = {0}; // 1 bit array
 int btb_target [BTB_SIZE] = {0};   // 16 bits array
@@ -260,6 +260,7 @@ static void sp_ctl(sp_t *sp)
   int i;
   int immediate;
   int inst;
+  int is_flush_needed;
 
   // Bypasses
   int dec1_r0_bypass = 0;
@@ -418,14 +419,17 @@ static void sp_ctl(sp_t *sp)
       sprn->dec0_btb_is_taken = spro->fetch1_btb_is_taken;
       sprn->dec0_btb_target = spro->fetch1_btb_target;
     }
+  } else {
+    sprn->dec0_active = 0;
   }
 	
   // dec0
   if (spro->dec0_active && !is_pipe_stalled) {
+    int opcode = (spro->dec0_inst >> 25) & 0x1F;
     sprn->dec1_active = 1;
     sprn->dec1_pc = spro->dec0_pc;
     sprn->dec1_inst = spro->dec0_inst;
-    sprn->dec1_opcode = (spro->dec0_inst >> 25) & 0x1F;
+    sprn->dec1_opcode = opcode;
     sprn->dec1_src0 = (spro->dec0_inst >> 19) & 0x7;
     sprn->dec1_src1 = (spro->dec0_inst >> 16) & 0x7;
     sprn->dec1_dst = (spro->dec0_inst >> 22) & 0x7;
@@ -436,8 +440,18 @@ static void sp_ctl(sp_t *sp)
     } else {
       sprn->dec1_immediate = immediate;
     }
+    
+    //if predicted jump taken, but opcode is not jump, flush pipe
+    if (!is_jump_opcode(opcode) && spro->dec0_btb_is_taken) {
+      sprn->fetch1_active = sprn->dec0_active = 0;
+      sprn->fetch0_pc = spro->dec0_pc + 1;
+    }
+
     sprn->dec1_btb_is_taken = spro->dec0_btb_is_taken;
     sprn->dec1_btb_target = spro->dec0_btb_target;
+  }
+  if (!(spro->dec0_active)) {
+    sprn->dec1_active = 0;
   }
 
   // dec1
@@ -461,6 +475,9 @@ static void sp_ctl(sp_t *sp)
     }
     sprn->exec0_btb_is_taken = spro->dec1_btb_is_taken;
     sprn->exec0_btb_target = spro->dec1_btb_target;
+  }
+  if (!(spro->dec1_active)) {
+    sprn->exec0_active = 0;
   }
 
   // exec0
@@ -539,6 +556,9 @@ static void sp_ctl(sp_t *sp)
   if (is_pipe_stalled) {
     sprn->exec1_active = 0;
   }
+  if (!(spro->exec0_active)) {
+    sprn->exec1_active = 0;
+  }
 	
   // exec1
   if (spro->exec1_active) {
@@ -605,7 +625,16 @@ static void sp_ctl(sp_t *sp)
       //update btb
       btb_is_taken[btb_addr] = spro->exec1_aluout;
       btb_target[btb_addr] = spro->exec1_immediate;
-     
+      
+      is_flush_needed = ((spro->exec1_aluout != spro->exec1_btb_is_taken) || 
+			     (spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate)));
+      
+      if (is_flush_needed) {
+	sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
+	  sprn->exec0_active = sprn->exec1_active = 0;
+	sprn->fetch0_pc = (spro->exec1_aluout) ? spro->exec1_immediate : spro->exec1_pc + 1;
+      }
+      
       break;
 
     case HLT:
@@ -617,17 +646,7 @@ static void sp_ctl(sp_t *sp)
       break;
     }
     
-    int is_jump_op = is_jump_opcode(spro->exec1_opcode);
-    int is_flush_needed = (is_jump_op && 
-			   ((spro->exec1_aluout != spro->exec1_btb_is_taken) || 
-			    (spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate)))) ||
-			 (!is_jump_op && spro->exec1_btb_is_taken);
     
-    if (is_flush_needed) {
-      sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
-	sprn->exec0_active = sprn->exec1_active = 0;
-      sprn->fetch0_pc = (is_jump_op && spro->exec1_aluout) ? spro->exec1_immediate : spro->exec1_pc + 1;
-    }
   }
 }
 
