@@ -15,12 +15,14 @@
   } while (0)
 
 int nr_simulated_instructions = 0;
-FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL;
+FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL;
 
 #define BTB_SIZE 64
 
 char btb_is_taken[BTB_SIZE] = {0}; // 1 bit array
 int btb_target [BTB_SIZE] = {0};   // 16 bits array
+
+int is_pipe_stalled = 0; //1 bit
 
 typedef struct sp_registers_s {
   // 6 32 bit registers (r[0], r[1] don't exist)
@@ -93,6 +95,17 @@ typedef struct sp_registers_s {
   int mem_stall; // 1 bit
   int mem_SRAM_DO; // 32 bits
   int mem_dst; // 3 bits
+
+  //DMA
+  int dma_busy;     // Flag indicates whether DMA machine is busy
+  int dma_src;      // Source address for DMA
+  int dma_dst;      // Destination address for DMA
+  int dma_len;      // Remaining words to copy for DMA
+  int dma_reg;      // DMA register as temporary storage between reads and writes
+  int dma_reg2;     // DMA register for storing second value in case stall in DMA_STATE_DO_WRITE fucks up pipelining
+  int dma_do_dirty; // DMA bit indicating that SRAM_DO needs to be read
+  int dma_state;    // DMA state machine control
+
 } sp_registers_t;
 
 /*
@@ -137,11 +150,24 @@ static void sp_reset(sp_t *sp)
 #define JNE 19
 #define JIN 20
 #define HLT 24
+#define DMA 10
+#define DMP 11
 
 static char opcode_name[32][4] = {"ADD", "SUB", "LSF", "RSF", "AND", "OR", "XOR", "LHI",
-				  "LD", "ST", "U", "U", "U", "U", "U", "U",
+				  "LD", "ST", "DMA", "DMP", "U", "U", "U", "U",
 				  "JLT", "JLE", "JEQ", "JNE", "JIN", "U", "U", "U",
 				  "HLT", "U", "U", "U", "U", "U", "U", "U"};
+
+
+// DMA states
+#define DMA_STATE_IDLE 0
+#define DMA_STATE_READ_FIRST 1
+#define DMA_STATE_DO_READ 2
+#define DMA_STATE_DO_WRITE 3
+#define DMA_STATE_WRITE_STALLED 4
+#define DMA_STATE_WRITE_LAST 5
+#define DMA_STATE_DO 6
+
 
 static void dump_sram(sp_t *sp, char *name, llsim_memory_t *sram)
 {
@@ -221,13 +247,6 @@ static void sp_ctl(sp_t *sp)
   int i;
   int immediate;
   int inst;
-
-  //Stall
-  int fetch0_stalled = 0;
-  int fetch1_stalled = 0;
-  int dec0_stalled = 0;
-  int dec1_stalled = 0;
-  int exec0_stalled = 0;
 
   // Bypasses
   int dec1_r0_bypass = 0;
@@ -338,20 +357,11 @@ static void sp_ctl(sp_t *sp)
   exec0_alu0_bypass = (exec0_exec1_to_alu0_bypass && spro->exec1_active) ? spro->exec1_aluout : spro->mem_SRAM_DO;
   exec0_alu1_bypass = (exec0_exec1_to_alu1_bypass && spro->exec1_active) ? spro->exec1_aluout : spro->mem_SRAM_DO;
 
-  exec0_stalled = (spro->exec1_active && 
+  is_pipe_stalled = (spro->exec1_active && 
 		   ((spro->exec0_opcode == LD && spro->exec1_opcode == ST) || //structural
 		    (spro->exec1_opcode == LD && ((spro->exec1_dst == spro->exec0_src0) || (spro->exec1_dst == exec0_alu1_cmp))))); //data Read after LD
 		    
-  dec1_stalled = exec0_stalled;
-  dec0_stalled = dec1_stalled;
-  fetch1_stalled = dec0_stalled;
-  fetch0_stalled = fetch1_stalled;
-
-  fprintf(cycle_trace_fp, "fetch0_stalled %d ", fetch0_stalled);
-  fprintf(cycle_trace_fp, "fetch1_stalled %d ", fetch1_stalled);
-  fprintf(cycle_trace_fp, "dec0_stalled %d ", dec0_stalled);
-  fprintf(cycle_trace_fp, "dec1_stalled %d ", dec1_stalled);
-  fprintf(cycle_trace_fp, "exec0_stalled %d\n", exec0_stalled);
+  fprintf(cycle_trace_fp, "is_pipe_stalled %d\n", is_pipe_stalled);
 
   fprintf(cycle_trace_fp, "exec0_exec1_to_alu0_bypass %d ",exec0_exec1_to_alu0_bypass); 
   fprintf(cycle_trace_fp, "exec0_exec1_to_alu1_bypass %d ",exec0_exec1_to_alu1_bypass);
@@ -360,13 +370,13 @@ static void sp_ctl(sp_t *sp)
 
   fprintf(cycle_trace_fp, "\n");
 
-  //TODO remove
-  /*if (spro->cycle_counter > 400) {
-   llsim_stop();
-   }*/
+  //  TODO remove
+  //if (spro->cycle_counter > 400) {
+  //  llsim_stop();
+  //}
 
   // fetch0
-  if (spro->fetch0_active && !fetch0_stalled) {
+  if (spro->fetch0_active && !is_pipe_stalled) {
     int btb_addr = spro->fetch0_pc % BTB_SIZE;
     llsim_mem_read(sp->srami, spro->fetch0_pc);
     if (btb_is_taken[btb_addr]) {
@@ -384,7 +394,7 @@ static void sp_ctl(sp_t *sp)
   // fetch1
   if (spro->fetch1_active) {
     inst = llsim_mem_extract_dataout(sp->srami, 31, 0);
-    if (fetch1_stalled) {
+    if (is_pipe_stalled) {
       sprn->fetch1_saved_inst = inst;
       sprn->fetch1_use_saved = 1;
     } else {
@@ -398,7 +408,7 @@ static void sp_ctl(sp_t *sp)
   }
 	
   // dec0
-  if (spro->dec0_active && !dec0_stalled) {
+  if (spro->dec0_active && !is_pipe_stalled) {
     sprn->dec1_active = 1;
     sprn->dec1_pc = spro->dec0_pc;
     sprn->dec1_inst = spro->dec0_inst;
@@ -418,7 +428,7 @@ static void sp_ctl(sp_t *sp)
   }
 
   // dec1
-  if (spro->dec1_active && !dec1_stalled) {
+  if (spro->dec1_active && !is_pipe_stalled) {
     sprn->exec0_active = 1;
     sprn->exec0_pc = spro->dec1_pc;
     sprn->exec0_inst = spro->dec1_inst;
@@ -441,7 +451,7 @@ static void sp_ctl(sp_t *sp)
   }
 
   // exec0
-  if (spro->exec0_active && !exec0_stalled) {
+  if (spro->exec0_active && !is_pipe_stalled) {
     sprn->exec1_active = 1;
     sprn->exec1_pc = spro->exec0_pc;
     sprn->exec1_inst = spro->exec0_inst;
@@ -487,6 +497,12 @@ static void sp_ctl(sp_t *sp)
       break;
     case ST:
       break;
+    case DMA:
+      sprn->exec1_aluout = spro->exec0_alu0;
+      break;
+    case DMP:
+      sprn->exec1_aluout = !(spro->exec0_alu0);
+      break;
     case JLT:
       sprn->exec1_aluout = exec0_alu0_final < exec0_alu1_final;
       break;
@@ -507,7 +523,7 @@ static void sp_ctl(sp_t *sp)
     sprn->exec1_btb_target = spro->exec0_btb_target;
 
   }
-  if (exec0_stalled) {
+  if (is_pipe_stalled) {
     sprn->exec1_active = 0;
   }
 	
@@ -549,7 +565,19 @@ static void sp_ctl(sp_t *sp)
       llsim_mem_write(sp->sramd, spro->exec1_alu1);
       fprintf(inst_trace_fp, ">>>> EXEC: MEM[%d] = R[%d] = %08x <<<<\n\n", spro->exec1_alu1, spro->exec1_src0, spro->exec1_alu0);
       break;
+    
+    case DMA:
+      if (spro->dma_busy) {
+        // Suppress operation if DMA machine is already busy
+        break;
+      }
+      sprn->dma_busy = 1;
+      sprn->dma_src = spro->exec1_alu0;
+      sprn->dma_dst = spro->exec1_aluout;
+      sprn->dma_len = spro->exec1_alu1;
+      break;
 
+    case DMP:
     case JLT:
     case JLE:
     case JEQ:
@@ -585,6 +613,164 @@ static void sp_ctl(sp_t *sp)
   }
 }
 
+static int is_dma_hazard(sp_registers_t *sp) {
+  return ((!is_pipe_stalled && sp->exec0_active && sp->exec0_opcode == LD) ||
+	  (sp->exec1_active && sp->exec1_opcode == ST));
+}
+
+static void dma_ctl(sp_t *sp)
+{
+  sp_registers_t *spro = sp->spro;
+  sp_registers_t *sprn = sp->sprn;
+
+  fprintf(dma_trace_fp, "cycle %d\n", llsim->clock);
+  fprintf(dma_trace_fp, "dma_src %08x\n", spro->dma_src);
+  fprintf(dma_trace_fp, "dma_dst %08x\n", spro->dma_dst);
+  fprintf(dma_trace_fp, "dma_len %08x\n", spro->dma_len);
+  fprintf(dma_trace_fp, "dma_reg %08x\n", spro->dma_reg);
+  fprintf(dma_trace_fp, "dma_reg2 %08x\n", spro->dma_reg2);
+  fprintf(dma_trace_fp, "dma_do_dirty %08x\n", spro->dma_do_dirty);
+  fprintf(dma_trace_fp, "dma_state %08x\n", spro->dma_state);
+  
+  sprn->cycle_counter = spro->cycle_counter + 1;
+  
+  switch (spro->dma_state) {
+    
+  case DMA_STATE_IDLE:
+    // Idle state for DMA machine
+    if (spro->dma_busy && (spro->dma_len > 0)) {
+      // DMA operation requested, start copy
+      sprn->dma_state = DMA_STATE_READ_FIRST;
+    } else {
+      spro->dma_busy = 0;
+    }
+    break;
+  
+  case DMA_STATE_READ_FIRST:
+    // Check for hazards
+    if (is_dma_hazard(spro)) {
+      // Stall
+      sprn->dma_state = spro->dma_state;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_READ_FIRST\n");
+      break;
+    }
+    // Read from memory
+    llsim_mem_read(sp->sramd, spro->dma_src & 0xffff);
+    sprn->dma_src = spro->dma_src + 1;
+    sprn->dma_do_dirty = 1;
+
+    //edge case: copy single word
+    if(spro->dma_len == 1) {
+      sprn->dma_state = DMA_STATE_DO;
+    } else {
+      sprn->dma_state = DMA_STATE_DO_READ;
+    }
+    break;
+  
+  case DMA_STATE_DO_READ:
+    
+    //copy data from memory bus to register
+    if (spro->dma_do_dirty) {
+      sprn->dma_reg = llsim_mem_extract_dataout(sp->sramd, 31, 0);
+    }
+    sprn->dma_do_dirty = 0;
+    
+    // Check for hazards
+    if (is_dma_hazard(spro)) {
+      // Stall
+      sprn->dma_state = spro->dma_state;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_DO_READ\n");
+      break;
+    }
+        
+    llsim_mem_read(sp->sramd, spro->dma_src & 0xffff);
+    sprn->dma_src = spro->dma_src + 1;
+    sprn->dma_do_dirty = 1;
+    sprn->dma_state = DMA_STATE_DO_WRITE;
+    break;
+  
+  case DMA_STATE_DO_WRITE:
+
+    // Check for hazards
+    if (is_dma_hazard(spro)) {
+      // Stall
+      sprn->dma_state = DMA_STATE_WRITE_STALLED;
+      sprn->dma_reg2 = llsim_mem_extract_dataout(sp->sramd, 31, 0);
+      sprn->dma_do_dirty = 0;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_DO_WRITE\n");
+      break;
+    }
+
+    //copy data from memory bus to register
+    if (spro->dma_do_dirty) {
+      sprn->dma_reg = llsim_mem_extract_dataout(sp->sramd, 31, 0);
+    }
+    sprn->dma_do_dirty = 0;
+    
+    // Write to memory
+    llsim_mem_set_datain(sp->sramd, spro->dma_reg, 31, 0);
+    llsim_mem_write(sp->sramd, spro->dma_dst & 0xffff);
+    
+    sprn->dma_dst = spro->dma_dst + 1;
+    sprn->dma_len = spro->dma_len - 1;
+    if (spro->dma_len == 2) {
+      sprn->dma_state = DMA_STATE_WRITE_LAST;
+    } else {
+      //Next iteration
+      sprn->dma_state = DMA_STATE_DO_READ;
+    }
+    break;
+
+  case DMA_STATE_WRITE_STALLED:
+    // Check for hazards
+    if (is_dma_hazard(spro)) {
+      // Stall
+      sprn->dma_state = spro->dma_state;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_WRITE_LAST\n");
+      break;
+    }
+    // Write to memory
+    llsim_mem_set_datain(sp->sramd, spro->dma_reg, 31, 0);
+    llsim_mem_write(sp->sramd, spro->dma_dst & 0xffff);
+    
+    sprn->dma_dst = spro->dma_dst + 1;
+    sprn->dma_len = spro->dma_len - 1;
+
+    sprn->dma_reg = spro->dma_reg2;
+    if (spro->dma_len == 2) {
+      sprn->dma_state = DMA_STATE_WRITE_LAST;
+    } else {
+      //Next iteration
+      sprn->dma_state = DMA_STATE_DO_READ;
+    }
+    break;
+
+  case DMA_STATE_WRITE_LAST:
+    // Check for hazards
+    if (is_dma_hazard(spro)) {
+      // Stall
+      sprn->dma_state = spro->dma_state;
+      fprintf(dma_trace_fp, "Stalled in DMA_STATE_WRITE_LAST\n");
+      break;
+    }
+
+    //Write last word
+    llsim_mem_set_datain(sp->sramd, spro->dma_reg, 31, 0);
+    llsim_mem_write(sp->sramd, spro->dma_dst & 0xffff);
+    
+    sprn->dma_busy = 0;
+    sprn->dma_state = DMA_STATE_IDLE;
+    break;
+  
+  case DMA_STATE_DO:
+    sprn->dma_reg = llsim_mem_extract_dataout(sp->sramd, 31, 0);
+    sprn->dma_state = DMA_STATE_WRITE_LAST;
+    break;
+  }
+
+  fprintf(dma_trace_fp, "\n");
+}
+
 static void sp_run(llsim_unit_t *unit)
 {
   sp_t *sp = (sp_t *) unit->private;
@@ -604,6 +790,7 @@ static void sp_run(llsim_unit_t *unit)
   sp->sramd->write = 0;
 
   sp_ctl(sp);
+  dma_ctl(sp);
 }
 
 static void sp_generate_sram_memory_image(sp_t *sp, char *program_name)
@@ -653,6 +840,13 @@ void sp_init(char *program_name)
     printf("couldn't open file cycle_trace.txt\n");
     exit(1);
   }
+
+  dma_trace_fp = fopen("dma_trace.txt", "w");
+  if (dma_trace_fp == NULL) {
+    printf("couldn't open file dma_trace.txt\n");
+    exit(1);
+  }
+
 
   llsim_sp_unit = llsim_register_unit("sp", sp_run);
   llsim_ur = llsim_allocate_registers(llsim_sp_unit, "sp_registers", sizeof(sp_registers_t));
