@@ -240,6 +240,19 @@ static void printExecution(sp_registers_t *sp) {
   }
 }
 
+static int is_jump_opcode(int opcode) {
+  switch(opcode) {
+  case DMP:
+  case JLT:
+  case JLE:
+  case JEQ:
+  case JNE:
+  case JIN:       
+    return 1;
+  }
+  return 0;
+}
+
 static void sp_ctl(sp_t *sp)
 {
   sp_registers_t *spro = sp->spro;
@@ -370,8 +383,8 @@ static void sp_ctl(sp_t *sp)
 
   fprintf(cycle_trace_fp, "\n");
 
-  //  TODO remove
-  //if (spro->cycle_counter > 400) {
+  //  Patch for debuggin when encounter infinite loop. Uncomment out when needed.
+  //if (spro->cycle_counter > 1000) {
   //  llsim_stop();
   //}
 
@@ -589,17 +602,10 @@ static void sp_ctl(sp_t *sp)
 	sprn->r[7] = spro->exec1_pc;
       }
 
-      //update btb       
+      //update btb
       btb_is_taken[btb_addr] = spro->exec1_aluout;
       btb_target[btb_addr] = spro->exec1_immediate;
-      
-      //flush pipeline if needed
-      if ((spro->exec1_aluout != spro->exec1_btb_is_taken) || 
-	(spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate))) {
-	sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
-	  sprn->exec0_active = sprn->exec1_active = 0;
-	sprn->fetch0_pc = spro->exec1_aluout ? spro->exec1_immediate : spro->exec1_pc + 1;
-      }
+     
       break;
 
     case HLT:
@@ -609,6 +615,18 @@ static void sp_ctl(sp_t *sp)
       dump_sram(sp, "srami_out.txt", sp->srami);
       dump_sram(sp, "sramd_out.txt", sp->sramd);
       break;
+    }
+    
+    int is_jump_op = is_jump_opcode(spro->exec1_opcode);
+    int is_flush_needed = (is_jump_op && 
+			   ((spro->exec1_aluout != spro->exec1_btb_is_taken) || 
+			    (spro->exec1_aluout && (spro->exec1_btb_target != spro->exec1_immediate)))) ||
+			 (!is_jump_op && spro->exec1_btb_is_taken);
+    
+    if (is_flush_needed) {
+      sprn->fetch1_active = sprn->dec0_active = sprn->dec1_active = 
+	sprn->exec0_active = sprn->exec1_active = 0;
+      sprn->fetch0_pc = (is_jump_op && spro->exec1_aluout) ? spro->exec1_immediate : spro->exec1_pc + 1;
     }
   }
 }
