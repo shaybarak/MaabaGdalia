@@ -17,7 +17,7 @@
 int nr_simulated_instructions = 0;
 FILE *inst_trace_fp = NULL, *cycle_trace_fp = NULL, *dma_trace_fp = NULL;
 
-#define BTB_SIZE 8
+#define BTB_SIZE 64
 
 char btb_is_taken[BTB_SIZE] = {0}; // 1 bit array
 int btb_target [BTB_SIZE] = {0};   // 16 bits array
